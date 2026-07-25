@@ -2,8 +2,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { FsrsState } from "@prisma/client";
-import { createEmptyCard, State } from "ts-fsrs";
+import { createInitialCardData } from "@/lib/fsrs/create-initial-card";
 import { revalidatePath } from "next/cache";
 
 export type SaveVocabResult =
@@ -31,28 +30,12 @@ export async function saveVocabToDeckAction(
       return { success: true, flashcardId: vocabItem.flashcard.id };
     }
 
-    const card = createEmptyCard();
-
-    const stateMap: Record<number, FsrsState> = {
-      [State.New]: FsrsState.New,
-      [State.Learning]: FsrsState.Learning,
-      [State.Review]: FsrsState.Review,
-      [State.Relearning]: FsrsState.Relearning,
-    };
+    const initialCardData = createInitialCardData();
 
     const created = await db.flashcard.create({
       data: {
         vocabItemId,
-        due: card.due,
-        stability: card.stability,
-        difficulty: card.difficulty,
-        elapsedDays: card.elapsed_days,
-        scheduledDays: card.scheduled_days,
-        learningSteps: card.learning_steps,
-        reps: card.reps,
-        lapses: card.lapses,
-        state: stateMap[card.state] ?? FsrsState.New,
-        lastReview: card.last_review ?? null,
+        ...initialCardData,
       },
     });
 

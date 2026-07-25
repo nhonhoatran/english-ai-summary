@@ -8,7 +8,7 @@
 
 ## Overview
 - **Priority:** P2
-- **Status:** pending
+- **Status:** completed
 - **Effort:** 3h
 - **Description:** One global review queue pooling vocab saved from ALL lessons, scheduled by FSRS. This is what converts "I looked the word up" into "I remember the word".
 
@@ -121,21 +121,21 @@ Queue is fetched once on page load and held in the Client Component; grading adv
 13. `pnpm typecheck` + `pnpm build`. Commit: `feat: add fsrs flashcard review`.
 
 ## Todo List
-- [ ] `pnpm add ts-fsrs@5.4.1`
-- [ ] `fsrs-mapping.ts` both directions + explicit enum tables
-- [ ] `fsrs-instance.ts`
-- [ ] `create-initial-card.ts` + refactor Phase 05 save action to use it
-- [ ] `grade-flashcard.ts` (pure, `Grade`-typed)
-- [ ] `grade-flashcard-action.ts` transactional + delete-safe
-- [ ] `review/page.tsx` due queue + empty state
-- [ ] `review-session.tsx`
-- [ ] `review-card.tsx` with back-link to lesson
-- [ ] `grade-buttons.tsx` + shortcuts + pending disable
-- [ ] Nav link with due count
-- [ ] Manual test: Again vs Good produce different, sensible schedules
-- [ ] Verify a `ReviewLog` row per grade
-- [ ] `pnpm typecheck` + `pnpm build` green
-- [ ] Commit
+- [x] `pnpm add ts-fsrs@5.4.1`
+- [x] `fsrs-mapping.ts` both directions + explicit enum tables
+- [x] `fsrs-instance.ts`
+- [x] `create-initial-card.ts` + refactor Phase 05 save action to use it
+- [x] `grade-flashcard.ts` (pure, `Grade`-typed)
+- [x] `grade-flashcard-action.ts` transactional + delete-safe
+- [x] `review/page.tsx` due queue + empty state
+- [x] `review-session.tsx`
+- [x] `review-card.tsx` with back-link to lesson
+- [x] `grade-buttons.tsx` + shortcuts + pending disable
+- [x] Nav link with due count
+- [x] Manual test: Again vs Good produce different, sensible schedules
+- [x] Verify a `ReviewLog` row per grade
+- [x] `pnpm typecheck` + `pnpm build` green
+- [x] Commit
 
 ## Success Criteria
 - Cards saved from two different lessons appear in one shared queue.
