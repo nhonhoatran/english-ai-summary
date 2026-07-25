@@ -19,3 +19,8 @@ Thumbs.db
 coverage/
 *.tsbuildinfo
 
+.agent/
+.agents/
+.claude/
+.opencode/
+.cursor/

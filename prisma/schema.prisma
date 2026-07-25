@@ -33,7 +33,9 @@ enum FsrsRating {
 
 model Lesson {
   id               String       @id @default(cuid())
-  videoId          String       @unique // YouTube 11-char id, canonical key
+  userId           String
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videoId          String       // YouTube 11-char id
   videoUrl         String
   title            String
   description      String? // 1-line, elllo-style
@@ -49,6 +51,9 @@ model Lesson {
   grammarPoints GrammarPoint[]
   quizQuestions QuizQuestion[]
   vocabItems    VocabItem[]
+
+  @@unique([userId, videoId])
+  @@index([userId, createdAt])
 }
 
 model TranscriptSegment {
@@ -95,14 +100,25 @@ model VocabItem {
   meaning    String
   example    String
   lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  flashcard  Flashcard?
+  flashcards Flashcard[]
 
   @@unique([lessonId, orderIndex])
 }
 
+model User {
+  id         String      @id @default(cuid())
+  phone      String      @unique
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  flashcards Flashcard[]
+  lessons    Lesson[]
+}
+
 model Flashcard {
   id          String    @id @default(cuid())
-  vocabItemId String    @unique // save-to-deck is 1:1 with a vocab item
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabItemId String
   vocabItem   VocabItem @relation(fields: [vocabItemId], references: [id], onDelete: Cascade)
 
   // --- ts-fsrs Card, field names mirrored from the library ---
@@ -120,7 +136,8 @@ model Flashcard {
   createdAt  DateTime    @default(now())
   reviewLogs ReviewLog[]
 
-  @@index([due]) // review queue: due <= now ORDER BY due
+  @@unique([userId, vocabItemId])
+  @@index([userId, due]) // review queue per user: userId = X AND due <= now ORDER BY due
 }
 
 model ReviewLog {

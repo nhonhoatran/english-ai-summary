@@ -13,7 +13,7 @@ export type SaveVocabResult =
 export async function saveVocabToDeckAction(
   vocabItemId: string
 ): Promise<SaveVocabResult> {
-  await requireAuth();
+  const session = await requireAuth();
 
   if (!vocabItemId) {
     return { success: false, error: "Vocabulary item ID is required." };
@@ -22,27 +22,37 @@ export async function saveVocabToDeckAction(
   try {
     const vocabItem = await db.vocabItem.findUnique({
       where: { id: vocabItemId },
-      include: { flashcard: true, lesson: { select: { id: true } } },
+      select: { id: true, lessonId: true },
     });
 
     if (!vocabItem) {
       return { success: false, error: "Vocabulary item not found." };
     }
 
-    if (vocabItem.flashcard) {
-      return { success: true, flashcardId: vocabItem.flashcard.id };
+    const existingFlashcard = await db.flashcard.findUnique({
+      where: {
+        userId_vocabItemId: {
+          userId: session.userId,
+          vocabItemId,
+        },
+      },
+    });
+
+    if (existingFlashcard) {
+      return { success: true, flashcardId: existingFlashcard.id };
     }
 
     const initialCardData = createInitialCardData();
 
     const created = await db.flashcard.create({
       data: {
+        userId: session.userId,
         vocabItemId,
         ...initialCardData,
       },
     });
 
-    revalidatePath(`/lessons/${vocabItem.lesson.id}`);
+    revalidatePath(`/lessons/${vocabItem.lessonId}`);
     return { success: true, flashcardId: created.id };
   } catch (err: unknown) {
     const message =

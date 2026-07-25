@@ -17,6 +17,7 @@ export async function resetTestDatabase() {
     "VocabItem",
     "TranscriptSegment",
     "Lesson",
+    "User",
   ];
 
   for (const table of tablenames) {

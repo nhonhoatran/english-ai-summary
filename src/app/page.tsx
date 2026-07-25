@@ -4,11 +4,15 @@ import { AddLessonForm } from "@/components/add-lesson-form";
 import { LessonListCard } from "@/components/lesson/lesson-list-card";
 import { LogoutButton } from "@/components/logout-button";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Phone } from "lucide-react";
+import { requireAuth } from "@/lib/auth/require-auth";
 
 export default async function Home() {
+  const session = await requireAuth();
+
   const [lessons, dueCount] = await Promise.all([
     db.lesson.findMany({
+      where: { userId: session.userId },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -21,16 +25,24 @@ export default async function Home() {
       },
     }),
     db.flashcard.count({
-      where: { due: { lte: new Date() } },
+      where: {
+        userId: session.userId,
+        due: { lte: new Date() },
+      },
     }),
   ]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center p-4 sm:p-8">
       <main className="w-full max-w-4xl space-y-10">
-        <div className="flex justify-end w-full">
+        <div className="flex justify-between items-center w-full bg-zinc-900/60 border border-zinc-800/80 px-4 py-2.5 rounded-2xl">
+          <div className="flex items-center gap-2 text-sm text-zinc-300 font-medium">
+            <Phone className="w-4 h-4 text-blue-400" />
+            <span>SĐT: <strong className="text-white">{session.phone}</strong></span>
+          </div>
           <LogoutButton />
         </div>
+
         <div className="flex flex-col items-center text-center space-y-3 pt-2">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">

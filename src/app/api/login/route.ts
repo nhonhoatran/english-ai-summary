@@ -1,40 +1,50 @@
 // path/to/src/app/api/login/route.ts
 import { NextResponse } from "next/server";
-import { verifyPassword } from "@/lib/auth/verify-password";
+import { db } from "@/lib/db";
 import { AUTH_COOKIE_NAME, COOKIE_MAX_AGE_SECONDS, signSession } from "@/lib/auth/auth-cookie";
 import { env } from "@/lib/env";
 
 export async function POST(request: Request) {
   try {
-    let password = "";
+    let phone = "";
     let nextParam = "/";
 
     const contentType = request.headers.get("content-type") || "";
     if (contentType.includes("application/json")) {
       const body = await request.json();
-      password = body.password || "";
+      phone = (body.phone || body.password || "").trim();
       if (body.next) nextParam = body.next;
-    } else if (contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
+    } else if (
+      contentType.includes("application/x-www-form-urlencoded") ||
+      contentType.includes("multipart/form-data")
+    ) {
       const formData = await request.formData();
-      password = (formData.get("password") as string) || "";
+      phone = ((formData.get("phone") || formData.get("password")) as string || "").trim();
       const n = formData.get("next") as string;
       if (n) nextParam = n;
     }
 
-    // Validate open-redirect guard: must start with single slash '/' and not double slash '//'
+    if (!phone) {
+      return NextResponse.json(
+        { success: false, error: "Vui lòng nhập số điện thoại." },
+        { status: 400 }
+      );
+    }
+
+    // Upsert user by phone number
+    const user = await db.user.upsert({
+      where: { phone },
+      create: { phone },
+      update: {},
+    });
+
+    // Open-redirect guard
     let redirectUrl = "/";
     if (typeof nextParam === "string" && nextParam.startsWith("/") && !nextParam.startsWith("//")) {
       redirectUrl = nextParam;
     }
 
-    if (!verifyPassword(password)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid password." },
-        { status: 401 }
-      );
-    }
-
-    const token = await signSession(env.AUTH_SECRET);
+    const token = await signSession({ userId: user.id, phone: user.phone }, env.AUTH_SECRET);
     const response = NextResponse.json({ success: true, redirectUrl });
 
     response.cookies.set({
@@ -48,9 +58,10 @@ export async function POST(request: Request) {
     });
 
     return response;
-  } catch {
+  } catch (error) {
+    console.error("Login failed:", error);
     return NextResponse.json(
-      { success: false, error: "Authentication failed." },
+      { success: false, error: "Đăng nhập thất bại. Vui lòng thử lại." },
       { status: 500 }
     );
   }

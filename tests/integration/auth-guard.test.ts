@@ -24,10 +24,15 @@ describe("auth-guard (requireAuth)", () => {
     await expect(requireAuth()).rejects.toThrow("Unauthorized");
   });
 
-  it("passes without throwing when auth cookie is valid and signed", async () => {
-    const validToken = await signSession(env.AUTH_SECRET);
+  it("returns user session when auth cookie is valid and signed", async () => {
+    const validToken = await signSession(
+      { userId: "test-user-id", phone: "0900000000" },
+      env.AUTH_SECRET
+    );
     mockGetCookie.mockReturnValue({ name: AUTH_COOKIE_NAME, value: validToken });
 
-    await expect(requireAuth()).resolves.toBeUndefined();
+    const session = await requireAuth();
+    expect(session.userId).toBe("test-user-id");
+    expect(session.phone).toBe("0900000000");
   });
 });

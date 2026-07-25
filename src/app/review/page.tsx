@@ -3,12 +3,16 @@ import { db } from "@/lib/db";
 import { ReviewSession } from "@/components/review/review-session";
 import Link from "next/link";
 import { ArrowLeft, Sparkles } from "lucide-react";
+import { requireAuth } from "@/lib/auth/require-auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReviewPage() {
+  const session = await requireAuth();
+
   const dueCards = await db.flashcard.findMany({
     where: {
+      userId: session.userId,
       due: { lte: new Date() },
     },
     orderBy: { due: "asc" },

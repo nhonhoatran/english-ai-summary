@@ -15,7 +15,7 @@ export async function gradeFlashcardAction(
   flashcardId: string,
   gradeNumber: number
 ): Promise<GradeActionResult> {
-  await requireAuth();
+  const session = await requireAuth();
 
   if (!flashcardId) {
     return { success: false, error: "Flashcard ID is required." };
@@ -38,7 +38,7 @@ export async function gradeFlashcardAction(
       where: { id: flashcardId },
     });
 
-    if (!flashcard) {
+    if (!flashcard || flashcard.userId !== session.userId) {
       return { success: false, notFound: true, error: "Flashcard not found." };
     }
 

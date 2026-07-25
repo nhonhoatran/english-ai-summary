@@ -12,13 +12,13 @@ export type IngestActionResult =
 export async function ingestLessonAction(
   url: string
 ): Promise<IngestActionResult> {
-  await requireAuth();
+  const session = await requireAuth();
 
   if (!url || typeof url !== "string") {
     return { success: false, error: "Please enter a YouTube video URL." };
   }
 
-  const result = await ingestLesson(url);
+  const result = await ingestLesson(url, session.userId);
 
   if (!result.ok) {
     return { success: false, error: result.error };

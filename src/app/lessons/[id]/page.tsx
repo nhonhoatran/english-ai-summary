@@ -10,6 +10,7 @@ import { TabScript } from "@/components/lesson/tab-script";
 import { TabGrammar } from "@/components/lesson/tab-grammar";
 import { TabQuiz } from "@/components/lesson/tab-quiz";
 import { TabVocabulary } from "@/components/lesson/tab-vocabulary";
+import { requireAuth } from "@/lib/auth/require-auth";
 
 interface LessonPageProps {
   params: Promise<{ id: string }>;
@@ -17,16 +18,22 @@ interface LessonPageProps {
 
 export default async function LessonPage({ params }: LessonPageProps) {
   const { id } = await params;
+  const session = await requireAuth();
 
-  const lesson = await db.lesson.findUnique({
-    where: { id },
+  const lesson = await db.lesson.findFirst({
+    where: { id, userId: session.userId },
     include: {
       segments: { orderBy: { orderIndex: "asc" } },
       grammarPoints: { orderBy: { orderIndex: "asc" } },
       quizQuestions: { orderBy: { orderIndex: "asc" } },
       vocabItems: {
         orderBy: { orderIndex: "asc" },
-        include: { flashcard: true },
+        include: {
+          flashcards: {
+            where: { userId: session.userId },
+            select: { id: true },
+          },
+        },
       },
     },
   });
@@ -34,6 +41,15 @@ export default async function LessonPage({ params }: LessonPageProps) {
   if (!lesson) {
     notFound();
   }
+
+  const vocabItemsForTab = lesson.vocabItems.map((item) => ({
+    id: item.id,
+    orderIndex: item.orderIndex,
+    term: item.term,
+    meaning: item.meaning,
+    example: item.example,
+    flashcard: item.flashcards[0] ? { id: item.flashcards[0].id } : null,
+  }));
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-8">
@@ -77,7 +93,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 />
               }
               quizTab={<TabQuiz questions={lesson.quizQuestions} />}
-              vocabTab={<TabVocabulary items={lesson.vocabItems} />}
+              vocabTab={<TabVocabulary items={vocabItemsForTab} />}
             />
           </LessonPlayerProvider>
         )}

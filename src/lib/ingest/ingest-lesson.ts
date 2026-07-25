@@ -30,9 +30,9 @@ function sanitizeErrorMessage(error: unknown): string {
 
 /**
  * Main orchestrator for lesson ingestion.
- * Single entry point for fetching, AI generation, and atomic database persistence.
+ * Single entry point for fetching, AI generation, and atomic database persistence per user.
  */
-export async function ingestLesson(rawUrl: string): Promise<IngestResult> {
+export async function ingestLesson(rawUrl: string, userId: string): Promise<IngestResult> {
   const parseResult = parseYoutubeUrl(rawUrl);
   if (!parseResult.ok) {
     return { ok: false, error: parseResult.error };
@@ -41,13 +41,18 @@ export async function ingestLesson(rawUrl: string): Promise<IngestResult> {
   const { videoId } = parseResult;
   const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
-  // 1. Check existing lesson for idempotency
+  // 1. Check existing lesson for idempotency for this specific user
   const existing = await db.lesson.findUnique({
-    where: { videoId },
+    where: {
+      userId_videoId: {
+        userId,
+        videoId,
+      },
+    },
   });
 
   if (existing && existing.status === "READY") {
-    console.log(`[ingestLesson] Reusing existing lesson for videoId=${videoId}`);
+    console.log(`[ingestLesson] Reusing existing lesson for user=${userId} videoId=${videoId}`);
     return { ok: true, lessonId: existing.id, reused: true };
   }
 
@@ -65,6 +70,7 @@ export async function ingestLesson(rawUrl: string): Promise<IngestResult> {
   } else {
     const created = await db.lesson.create({
       data: {
+        userId,
         videoId,
         videoUrl: canonicalUrl,
         title: "Processing lesson...",
@@ -91,13 +97,7 @@ export async function ingestLesson(rawUrl: string): Promise<IngestResult> {
     );
 
     // 4. Atomic transaction persistence
-    // Conventions for orderIndex:
-    // - segments: 0-based (0..N-1) for timeline alignment
-    // - grammarPoints: 1-based (1..4) matching "Point 1".."Point 4" display
-    // - quizQuestions: 1-based (1..5) matching "Q1".."Q5" display
-    // - vocabItems: 1-based (1..N) matching item numbering
     await db.$transaction(async (tx) => {
-      // Clear old child records if re-attempting a previously failed row
       await tx.transcriptSegment.deleteMany({ where: { lessonId } });
       await tx.grammarPoint.deleteMany({ where: { lessonId } });
       await tx.quizQuestion.deleteMany({ where: { lessonId } });

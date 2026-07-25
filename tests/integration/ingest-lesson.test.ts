@@ -17,9 +17,13 @@ import { fetchYoutubeCaptions } from "@/lib/ingest/fetch-youtube-captions";
 import { generateLesson } from "@/lib/gemini/generate-lesson";
 
 describe("ingestLesson integration", () => {
+  let testUserId: string;
+
   beforeEach(async () => {
     vi.clearAllMocks();
     await resetTestDatabase();
+    const user = await db.user.create({ data: { phone: "0900000000" } });
+    testUserId = user.id;
   });
 
   it("persists a complete READY lesson with stubbed generator and captions", async () => {
@@ -27,7 +31,7 @@ describe("ingestLesson integration", () => {
     vi.mocked(generateLesson).mockResolvedValue(validGeneratedLessonFixture);
 
     const rawUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-    const res = await ingestLesson(rawUrl);
+    const res = await ingestLesson(rawUrl, testUserId);
 
     expect(res.ok).toBe(true);
     if (!res.ok) return;
@@ -63,7 +67,7 @@ describe("ingestLesson integration", () => {
     vi.mocked(generateLesson).mockResolvedValue(validGeneratedLessonFixture);
 
     const rawUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-    const res = await ingestLesson(rawUrl);
+    const res = await ingestLesson(rawUrl, testUserId);
 
     expect(res.ok).toBe(true);
     if (!res.ok) return;
@@ -72,17 +76,17 @@ describe("ingestLesson integration", () => {
     expect(lesson?.transcriptSource).toBe("gemini");
   });
 
-  it("reuses existing lesson for same URL without calling generator twice", async () => {
+  it("reuses existing lesson for same URL for the same user", async () => {
     vi.mocked(fetchYoutubeCaptions).mockResolvedValue(sampleCaptionSegmentsFixture);
     vi.mocked(generateLesson).mockResolvedValue(validGeneratedLessonFixture);
 
     const rawUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 
-    const firstRun = await ingestLesson(rawUrl);
+    const firstRun = await ingestLesson(rawUrl, testUserId);
     expect(firstRun.ok).toBe(true);
     expect(generateLesson).toHaveBeenCalledTimes(1);
 
-    const secondRun = await ingestLesson(rawUrl);
+    const secondRun = await ingestLesson(rawUrl, testUserId);
     expect(secondRun.ok).toBe(true);
     if (secondRun.ok && firstRun.ok) {
       expect(secondRun.reused).toBe(true);
@@ -96,20 +100,20 @@ describe("ingestLesson integration", () => {
     vi.mocked(generateLesson).mockRejectedValue(new Error("API quota exceeded / permission_denied"));
 
     const rawUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-    const res = await ingestLesson(rawUrl);
+    const res = await ingestLesson(rawUrl, testUserId);
 
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error).toContain("This video is private or unlisted");
     }
 
-    const lesson = await db.lesson.findUnique({ where: { videoId: "dQw4w9WgXcQ" } });
+    const lesson = await db.lesson.findFirst({ where: { videoId: "dQw4w9WgXcQ", userId: testUserId } });
     expect(lesson?.status).toBe("FAILED");
     expect(lesson?.errorMessage).toContain("This video is private or unlisted");
   });
 
   it("rejects invalid URL without calling generator or touching DB", async () => {
-    const res = await ingestLesson("invalid-url-string");
+    const res = await ingestLesson("invalid-url-string", testUserId);
 
     expect(res.ok).toBe(false);
     expect(generateLesson).not.toHaveBeenCalled();

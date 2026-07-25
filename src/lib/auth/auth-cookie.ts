@@ -3,6 +3,12 @@
 export const AUTH_COOKIE_NAME = "auth_session";
 export const COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
+export interface UserSession {
+  userId: string;
+  phone: string;
+  issuedAt: number;
+}
+
 function bufferToBase64Url(buf: ArrayBuffer): string {
   const bytes = new Uint8Array(buf);
   let binary = "";
@@ -37,34 +43,40 @@ async function getHmacKey(secret: string): Promise<CryptoKey> {
   );
 }
 
-export async function signSession(secret: string): Promise<string> {
-  const issuedAt = Date.now().toString();
-  const key = await getHmacKey(secret);
+export async function signSession(
+  userPayload: { userId: string; phone: string },
+  secret: string
+): Promise<string> {
+  const issuedAt = Date.now();
+  const session: UserSession = {
+    userId: userPayload.userId,
+    phone: userPayload.phone,
+    issuedAt,
+  };
+  const jsonStr = JSON.stringify(session);
   const enc = new TextEncoder();
+  const payloadBase64Url = bufferToBase64Url(enc.encode(jsonStr).buffer);
+
+  const key = await getHmacKey(secret);
   const signature = await crypto.subtle.sign(
     "HMAC",
     key,
-    enc.encode(issuedAt)
+    enc.encode(payloadBase64Url)
   );
   const sigBase64Url = bufferToBase64Url(signature);
-  return `${issuedAt}.${sigBase64Url}`;
+  return `${payloadBase64Url}.${sigBase64Url}`;
 }
 
 export async function verifySession(
   token: string | undefined | null,
   secret: string
-): Promise<boolean> {
-  if (!token || typeof token !== "string") return false;
+): Promise<UserSession | null> {
+  if (!token || typeof token !== "string") return null;
   const parts = token.split(".");
-  if (parts.length !== 2) return false;
+  if (parts.length !== 2) return null;
 
-  const [issuedAtStr, sigBase64Url] = parts;
-  const issuedAt = parseInt(issuedAtStr, 10);
-  if (isNaN(issuedAt) || issuedAt <= 0) return false;
-
-  // Expiration check (30 days)
-  const maxAgeMs = COOKIE_MAX_AGE_SECONDS * 1000;
-  if (Date.now() - issuedAt > maxAgeMs) return false;
+  const [payloadBase64Url, sigBase64Url] = parts;
+  if (!payloadBase64Url || !sigBase64Url) return null;
 
   try {
     const key = await getHmacKey(secret);
@@ -74,10 +86,25 @@ export async function verifySession(
       "HMAC",
       key,
       sigBytes as unknown as BufferSource,
-      enc.encode(issuedAtStr)
+      enc.encode(payloadBase64Url)
     );
-    return valid;
+    if (!valid) return null;
+
+    const payloadBytes = base64UrlToBuffer(payloadBase64Url);
+    const dec = new TextDecoder();
+    const jsonStr = dec.decode(payloadBytes);
+    const session: UserSession = JSON.parse(jsonStr);
+
+    if (!session || !session.userId || !session.phone || typeof session.issuedAt !== "number") {
+      return null;
+    }
+
+    // Expiration check (30 days)
+    const maxAgeMs = COOKIE_MAX_AGE_SECONDS * 1000;
+    if (Date.now() - session.issuedAt > maxAgeMs) return null;
+
+    return session;
   } catch {
-    return false;
+    return null;
   }
 }
