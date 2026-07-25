@@ -1,24 +1,25 @@
-// path/to/src/lib/ingest/fetch-youtube-captions.ts
-
-import { YoutubeTranscript } from "@danielxceron/youtube-transcript";
+import { getSubtitles } from "youtube-caption-extractor";
 import { TranscriptSegment } from "../gemini/lesson-schemas";
 
 export async function fetchYoutubeCaptions(
   videoId: string
 ): Promise<TranscriptSegment[] | null> {
   try {
-    const rawTranscript = await YoutubeTranscript.fetchTranscript(videoId);
+    let subtitles = await getSubtitles({ videoID: videoId, lang: "en" }).catch(() => null);
 
-    if (!rawTranscript || rawTranscript.length === 0) {
+    if (!subtitles || subtitles.length === 0) {
+      subtitles = await getSubtitles({ videoID: videoId }).catch(() => null);
+    }
+
+    if (!subtitles || subtitles.length === 0) {
       console.log(
         `[fetchYoutubeCaptions] No caption segments returned for videoId=${videoId}`
       );
       return null;
     }
 
-    // Empirically verified: @danielxceron/youtube-transcript returns offset in SECONDS
-    const segments: TranscriptSegment[] = rawTranscript.map((item) => ({
-      startSeconds: Math.floor(item.offset),
+    const segments: TranscriptSegment[] = subtitles.map((item) => ({
+      startSeconds: Math.floor(parseFloat(item.start)),
       speaker: "Unknown",
       text: item.text.trim(),
     }));
