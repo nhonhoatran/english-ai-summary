@@ -17,35 +17,50 @@ describe("lessonAnalysisSchema Zod Arity and Field Validation", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects 3 grammar points (requires exactly 4)", () => {
-    const invalid = {
-      ...baseLessonAnalysis,
-      grammarPoints: baseLessonAnalysis.grammarPoints.slice(0, 3),
-    };
-    const result = lessonAnalysisSchema.safeParse(invalid);
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects 5 examples in a grammar point (requires exactly 4)", () => {
-    const invalidGp = [
-      {
-        ...baseLessonAnalysis.grammarPoints[0],
-        examples: [...baseLessonAnalysis.grammarPoints[0].examples, "Extra example 5"],
-      },
-      ...baseLessonAnalysis.grammarPoints.slice(1),
+  it("accepts custom count of grammar points (e.g. 6 points)", () => {
+    const sixPoints = [
+      ...baseLessonAnalysis.grammarPoints,
+      ...baseLessonAnalysis.grammarPoints.slice(0, 2),
     ];
-    const invalid = {
+    const valid = {
       ...baseLessonAnalysis,
-      grammarPoints: invalidGp,
+      grammarPoints: sixPoints,
     };
-    const result = lessonAnalysisSchema.safeParse(invalid);
-    expect(result.success).toBe(false);
+    const result = lessonAnalysisSchema.safeParse(valid);
+    expect(result.success).toBe(true);
   });
 
-  it("rejects 4 quiz questions (requires exactly 5)", () => {
+  it("accepts custom count of quiz questions (e.g. 10 questions)", () => {
+    const tenQuestions = [
+      ...baseLessonAnalysis.quizQuestions,
+      ...baseLessonAnalysis.quizQuestions,
+    ];
+    const valid = {
+      ...baseLessonAnalysis,
+      quizQuestions: tenQuestions,
+    };
+    const result = lessonAnalysisSchema.safeParse(valid);
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts custom count of vocab items (e.g. 15 vocab items)", () => {
+    const fifteenVocab = [
+      ...baseLessonAnalysis.vocabItems,
+      ...baseLessonAnalysis.vocabItems,
+      ...baseLessonAnalysis.vocabItems,
+    ];
+    const valid = {
+      ...baseLessonAnalysis,
+      vocabItems: fifteenVocab,
+    };
+    const result = lessonAnalysisSchema.safeParse(valid);
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects empty grammarPoints array", () => {
     const invalid = {
       ...baseLessonAnalysis,
-      quizQuestions: baseLessonAnalysis.quizQuestions.slice(0, 4),
+      grammarPoints: [],
     };
     const result = lessonAnalysisSchema.safeParse(invalid);
     expect(result.success).toBe(false);
@@ -78,28 +93,6 @@ describe("lessonAnalysisSchema Zod Arity and Field Validation", () => {
     const invalid = {
       ...baseLessonAnalysis,
       quizQuestions: invalidQq,
-    };
-    const result = lessonAnalysisSchema.safeParse(invalid);
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects 5 vocab items (requires min 6)", () => {
-    const invalid = {
-      ...baseLessonAnalysis,
-      vocabItems: baseLessonAnalysis.vocabItems.slice(0, 5),
-    };
-    const result = lessonAnalysisSchema.safeParse(invalid);
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects 11 vocab items (requires max 10)", () => {
-    const elevenVocab = [
-      ...baseLessonAnalysis.vocabItems,
-      ...baseLessonAnalysis.vocabItems.slice(0, 5),
-    ];
-    const invalid = {
-      ...baseLessonAnalysis,
-      vocabItems: elevenVocab,
     };
     const result = lessonAnalysisSchema.safeParse(invalid);
     expect(result.success).toBe(false);

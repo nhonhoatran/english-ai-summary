@@ -11,6 +11,7 @@ import { buildTranscriptionPrompt } from "./prompt-transcription";
 import {
   buildLessonAnalysisPrompt,
   formatTranscriptForPrompt,
+  LessonAnalysisOptions,
 } from "./prompt-lesson-analysis";
 
 export type StrategyInput =
@@ -29,7 +30,8 @@ export interface StrategyResult {
  * - If with-captions: Uses supplied transcript, performs Call 2 text-only analysis.
  */
 export async function executeTwoCallStrategy(
-  input: StrategyInput
+  input: StrategyInput,
+  options?: LessonAnalysisOptions
 ): Promise<StrategyResult> {
   let transcript: TranscriptSegment[];
 
@@ -58,7 +60,7 @@ export async function executeTwoCallStrategy(
 
   // Call 2: Text-only lesson analysis
   const formattedTranscript = formatTranscriptForPrompt(transcript);
-  const analysisPrompt = buildLessonAnalysisPrompt(formattedTranscript);
+  const analysisPrompt = buildLessonAnalysisPrompt(formattedTranscript, options);
 
   const analysisResponse = await ai.models.generateContent({
     model: GEMINI_MODEL,

@@ -4,6 +4,7 @@ import { db } from "../db";
 import { parseYoutubeUrl } from "./parse-youtube-url";
 import { fetchYoutubeCaptions } from "./fetch-youtube-captions";
 import { generateLesson, GeneratedLesson } from "../gemini/generate-lesson";
+import { LessonAnalysisOptions } from "../gemini/prompt-lesson-analysis";
 
 export type IngestResult =
   | { ok: true; lessonId: string; reused: boolean }
@@ -32,7 +33,11 @@ function sanitizeErrorMessage(error: unknown): string {
  * Main orchestrator for lesson ingestion.
  * Single entry point for fetching, AI generation, and atomic database persistence per user.
  */
-export async function ingestLesson(rawUrl: string, userId: string): Promise<IngestResult> {
+export async function ingestLesson(
+  rawUrl: string,
+  userId: string,
+  options?: LessonAnalysisOptions
+): Promise<IngestResult> {
   const parseResult = parseYoutubeUrl(rawUrl);
   if (!parseResult.ok) {
     return { ok: false, error: parseResult.error };
@@ -93,7 +98,8 @@ export async function ingestLesson(rawUrl: string, userId: string): Promise<Inge
     const generated: GeneratedLesson = await generateLesson(
       captions
         ? { kind: "with-captions", youtubeUrl: canonicalUrl, transcript: captions }
-        : { kind: "video-only", youtubeUrl: canonicalUrl }
+        : { kind: "video-only", youtubeUrl: canonicalUrl },
+      options
     );
 
     // 4. Atomic transaction persistence

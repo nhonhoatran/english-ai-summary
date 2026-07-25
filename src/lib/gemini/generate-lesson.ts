@@ -5,6 +5,7 @@ import {
   VocabItem,
 } from "./lesson-schemas";
 import { executeTwoCallStrategy } from "./strategy-two-call";
+import { LessonAnalysisOptions } from "./prompt-lesson-analysis";
 
 export type GenerateLessonInput =
   | { kind: "with-captions"; youtubeUrl: string; transcript: TranscriptSegment[] }
@@ -28,7 +29,8 @@ export interface GeneratedLesson {
 export const GEMINI_SUPPORTS_VIDEO_WITH_SCHEMA = false;
 
 export async function generateLesson(
-  input: GenerateLessonInput
+  input: GenerateLessonInput,
+  options?: LessonAnalysisOptions
 ): Promise<GeneratedLesson> {
   let attempts = 0;
   const maxAttempts = 2; // 1 initial attempt + 1 retry
@@ -37,7 +39,7 @@ export async function generateLesson(
     attempts++;
     try {
       // Dispatch strategy
-      const result = await executeTwoCallStrategy(input);
+      const result = await executeTwoCallStrategy(input, options);
 
       return {
         transcript: result.transcript,

@@ -27,9 +27,9 @@ export const lessonAnalysisSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
   grammarTheme: z.string().min(1),
-  grammarPoints: z.array(grammarPointSchema).length(4), // exactly 4
-  quizQuestions: z.array(quizQuestionSchema).length(5), // exactly 5
-  vocabItems: z.array(vocabItemSchema).min(6).max(10),
+  grammarPoints: z.array(grammarPointSchema).min(1),
+  quizQuestions: z.array(quizQuestionSchema).min(1),
+  vocabItems: z.array(vocabItemSchema).min(1),
 });
 
 export const transcriptSchema = z.array(transcriptSegmentSchema);
