@@ -43,6 +43,7 @@ describe("ingestLesson integration", () => {
       where: { id: res.lessonId },
       include: {
         segments: { orderBy: { orderIndex: "asc" } },
+        dialogueLines: { orderBy: { orderIndex: "asc" } },
         grammarPoints: { orderBy: { orderIndex: "asc" } },
         quizQuestions: { orderBy: { orderIndex: "asc" } },
         vocabItems: { orderBy: { orderIndex: "asc" } },
@@ -55,6 +56,8 @@ describe("ingestLesson integration", () => {
     expect(lesson?.title).toBe(validGeneratedLessonFixture.title);
     expect(lesson?.segments.length).toBe(validGeneratedLessonFixture.transcript.length);
     expect(lesson?.segments[0].orderIndex).toBe(0);
+    expect(lesson?.dialogueLines.length).toBe(validGeneratedLessonFixture.dialogueLines.length);
+    expect(lesson?.dialogueLines[0].orderIndex).toBe(1);
     expect(lesson?.grammarPoints.length).toBe(4);
     expect(lesson?.grammarPoints[0].orderIndex).toBe(1);
     expect(lesson?.quizQuestions.length).toBe(5);

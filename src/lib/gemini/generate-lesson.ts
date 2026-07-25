@@ -3,6 +3,7 @@ import {
   GrammarPoint,
   QuizQuestion,
   VocabItem,
+  DialogueLine,
 } from "./lesson-schemas";
 import { executeTwoCallStrategy } from "./strategy-two-call";
 import { LessonAnalysisOptions } from "./prompt-lesson-analysis";
@@ -19,6 +20,7 @@ export interface GeneratedLesson {
   grammarPoints: GrammarPoint[];
   quizQuestions: QuizQuestion[];
   vocabItems: VocabItem[];
+  dialogueLines: DialogueLine[];
 }
 
 /**
@@ -49,6 +51,7 @@ export async function generateLesson(
         grammarPoints: result.analysis.grammarPoints,
         quizQuestions: result.analysis.quizQuestions,
         vocabItems: result.analysis.vocabItems,
+        dialogueLines: result.analysis.dialogueLines,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);

@@ -23,6 +23,11 @@ export const vocabItemSchema = z.object({
   example: z.string().min(1),
 });
 
+export const dialogueLineSchema = z.object({
+  speaker: z.string().min(1),
+  text: z.string().min(1),
+});
+
 export const lessonAnalysisSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
@@ -30,6 +35,7 @@ export const lessonAnalysisSchema = z.object({
   grammarPoints: z.array(grammarPointSchema).min(1),
   quizQuestions: z.array(quizQuestionSchema).min(1),
   vocabItems: z.array(vocabItemSchema).min(1),
+  dialogueLines: z.array(dialogueLineSchema).min(1),
 });
 
 export const transcriptSchema = z.array(transcriptSegmentSchema);
@@ -38,6 +44,7 @@ export type TranscriptSegment = z.infer<typeof transcriptSegmentSchema>;
 export type GrammarPoint = z.infer<typeof grammarPointSchema>;
 export type QuizQuestion = z.infer<typeof quizQuestionSchema>;
 export type VocabItem = z.infer<typeof vocabItemSchema>;
+export type DialogueLine = z.infer<typeof dialogueLineSchema>;
 export type LessonAnalysis = z.infer<typeof lessonAnalysisSchema>;
 
 /**
@@ -91,6 +98,17 @@ export function getLessonAnalysisJsonSchema(): Record<string, unknown> {
           required: ["term", "meaning", "example"],
         },
       },
+      dialogueLines: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            speaker: { type: "string" },
+            text: { type: "string" },
+          },
+          required: ["speaker", "text"],
+        },
+      },
     },
     required: [
       "title",
@@ -99,6 +117,7 @@ export function getLessonAnalysisJsonSchema(): Record<string, unknown> {
       "grammarPoints",
       "quizQuestions",
       "vocabItems",
+      "dialogueLines",
     ],
   };
 }

@@ -16,6 +16,7 @@ export async function resetTestDatabase() {
     "GrammarPoint",
     "VocabItem",
     "TranscriptSegment",
+    "DialogueLine",
     "Lesson",
     "User",
   ];

@@ -105,6 +105,7 @@ export async function ingestLesson(
     // 4. Atomic transaction persistence
     await db.$transaction(async (tx) => {
       await tx.transcriptSegment.deleteMany({ where: { lessonId } });
+      await tx.dialogueLine.deleteMany({ where: { lessonId } });
       await tx.grammarPoint.deleteMany({ where: { lessonId } });
       await tx.quizQuestion.deleteMany({ where: { lessonId } });
       await tx.vocabItem.deleteMany({ where: { lessonId } });
@@ -124,6 +125,13 @@ export async function ingestLesson(
               startSeconds: seg.startSeconds,
               speaker: seg.speaker,
               text: seg.text,
+            })),
+          },
+          dialogueLines: {
+            create: generated.dialogueLines.map((d, idx) => ({
+              orderIndex: idx + 1,
+              speaker: d.speaker,
+              text: d.text,
             })),
           },
           grammarPoints: {

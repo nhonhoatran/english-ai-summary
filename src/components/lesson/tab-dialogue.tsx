@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import { usePlayer } from "./lesson-player-provider";
 import { formatTimestamp } from "@/lib/format-timestamp";
-import { Play, Users, User, Eye, EyeOff } from "lucide-react";
+import { Play, Users, User, Eye, EyeOff, Volume2, VolumeX } from "lucide-react";
 
 interface Segment {
   id: string;
@@ -14,51 +14,107 @@ interface Segment {
   text: string;
 }
 
+interface DialogueLineItem {
+  id: string;
+  orderIndex: number;
+  speaker: string;
+  text: string;
+}
+
 interface TabDialogueProps {
-  segments: Segment[];
+  dialogueLines?: DialogueLineItem[];
+  segments?: Segment[];
 }
 
 type RoleMode = "all" | "speakerA" | "speakerB";
 
-export function TabDialogue({ segments }: TabDialogueProps) {
+export function TabDialogue({ dialogueLines = [], segments = [] }: TabDialogueProps) {
   const { seekTo } = usePlayer();
   const [roleMode, setRoleMode] = useState<RoleMode>("all");
   const [maskTargetLines, setMaskTargetLines] = useState<boolean>(false);
-  const [revealedSegmentIds, setRevealedSegmentIds] = useState<Record<string, boolean>>({});
-  const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
+  const [revealedIds, setRevealedIds] = useState<Record<string, boolean>>({});
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+
+  // Use dialogueLines if available, otherwise fall back to video transcript segments
+  const displayItems = useMemo(() => {
+    if (dialogueLines && dialogueLines.length > 0) {
+      return dialogueLines.map((d) => ({
+        id: d.id,
+        speaker: d.speaker,
+        text: d.text,
+        startSeconds: null as number | null,
+      }));
+    }
+    return segments.map((s) => ({
+      id: s.id,
+      speaker: s.speaker,
+      text: s.text,
+      startSeconds: s.startSeconds,
+    }));
+  }, [dialogueLines, segments]);
 
   // Extract unique speakers (Speaker A = first speaker, Speaker B = second speaker)
   const speakers = useMemo(() => {
     const set = new Set<string>();
-    segments.forEach((s) => {
+    displayItems.forEach((s) => {
       if (s.speaker && s.speaker.trim()) {
         set.add(s.speaker.trim());
       }
     });
     const list = Array.from(set);
     return {
-      speakerA: list[0] || "Speaker A",
-      speakerB: list[1] || "Speaker B",
+      speakerA: list[0] || "Person A",
+      speakerB: list[1] || "Person B",
     };
-  }, [segments]);
+  }, [displayItems]);
 
   const toggleReveal = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setRevealedSegmentIds((prev) => ({
+    setRevealedIds((prev) => ({
       ...prev,
       [id]: !prev[id],
     }));
   };
 
-  const handleLineClick = (seg: Segment) => {
-    setActiveSegmentId(seg.id);
-    seekTo(seg.startSeconds);
+  const speakLine = (id: string, text: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    if (speakingId === id) {
+      setSpeakingId(null);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.rate = 0.95;
+
+    utterance.onend = () => setSpeakingId(null);
+    utterance.onerror = () => setSpeakingId(null);
+
+    setSpeakingId(id);
+    window.speechSynthesis.speak(utterance);
   };
 
-  if (segments.length === 0) {
+  const handleLineClick = (item: { id: string; text: string; startSeconds: number | null }) => {
+    setActiveId(item.id);
+    if (item.startSeconds !== null) {
+      seekTo(item.startSeconds);
+    } else {
+      speakLine(item.id, item.text);
+    }
+  };
+
+  if (displayItems.length === 0) {
     return (
       <div className="p-8 text-center text-zinc-500 rounded-xl bg-zinc-900/50 border border-zinc-800">
-        No dialogue script available for this lesson.
+        No dialogue available for this lesson.
       </div>
     );
   }
@@ -70,7 +126,7 @@ export function TabDialogue({ segments }: TabDialogueProps) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-white">
             <Users className="w-4 h-4 text-blue-400" />
-            <span>Chế độ Giả lập Đối thoại (Dialogue Simulator)</span>
+            <span>Bài đối thoại ELLLO do AI biên soạn (Dialogue Simulator)</span>
           </div>
 
           {/* Mask toggle for Roleplay mode */}
@@ -147,17 +203,17 @@ export function TabDialogue({ segments }: TabDialogueProps) {
         {/* Dynamic Helper Prompt based on Mode */}
         <p className="text-xs text-zinc-400 italic">
           {roleMode === "all"
-            ? "💡 Nhấn vào bất kỳ câu đối thoại nào để tua video đến lượt nói đó."
+            ? "💡 Bài đối thoại được AI biên soạn theo cấu trúc ngữ pháp bài học. Click để phát âm từng câu thoại."
             : roleMode === "speakerA"
-            ? `👤 Bạn đang đóng vai ${speakers.speakerA}. Luyện phát biểu lượt của bạn trước khi nghe mẫu!`
-            : `👤 Bạn đang đóng vai ${speakers.speakerB}. Luyện phát biểu lượt của bạn trước khi nghe mẫu!`}
+            ? `👤 Bạn đang đóng vai ${speakers.speakerA}. Hãy đọc lượt của bạn trước khi nghe máy phát âm!`
+            : `👤 Bạn đang đóng vai ${speakers.speakerB}. Hãy đọc lượt của bạn trước khi nghe máy phát âm!`}
         </p>
       </div>
 
       {/* Dialogue Chat Bubbles Stream */}
       <div className="space-y-4">
-        {segments.map((seg) => {
-          const isSpeakerA = seg.speaker.trim() === speakers.speakerA;
+        {displayItems.map((item) => {
+          const isSpeakerA = item.speaker.trim() === speakers.speakerA;
           const isTargetUserRole =
             (roleMode === "speakerA" && isSpeakerA) ||
             (roleMode === "speakerB" && !isSpeakerA);
@@ -166,14 +222,15 @@ export function TabDialogue({ segments }: TabDialogueProps) {
             roleMode !== "all" &&
             isTargetUserRole &&
             maskTargetLines &&
-            !revealedSegmentIds[seg.id];
+            !revealedIds[item.id];
 
-          const isActive = activeSegmentId === seg.id;
+          const isActive = activeId === item.id;
+          const isSpeaking = speakingId === item.id;
 
           return (
             <div
-              key={seg.id}
-              onClick={() => handleLineClick(seg)}
+              key={item.id}
+              onClick={() => handleLineClick(item)}
               className={`group flex items-start gap-3 p-4 rounded-2xl border transition-all cursor-pointer ${
                 isSpeakerA
                   ? "bg-blue-950/20 border-blue-900/40 hover:border-blue-700/60"
@@ -192,7 +249,7 @@ export function TabDialogue({ segments }: TabDialogueProps) {
                     : "bg-emerald-900/80 text-emerald-200 border border-emerald-700/50"
                 }`}
               >
-                {seg.speaker.slice(0, 2).toUpperCase()}
+                {item.speaker.slice(0, 2).toUpperCase()}
               </div>
 
               {/* Speech Content Card */}
@@ -204,7 +261,7 @@ export function TabDialogue({ segments }: TabDialogueProps) {
                         isSpeakerA ? "text-blue-400" : "text-emerald-400"
                       }`}
                     >
-                      {seg.speaker}
+                      {item.speaker}
                     </span>
                     {isTargetUserRole && (
                       <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -213,11 +270,36 @@ export function TabDialogue({ segments }: TabDialogueProps) {
                     )}
                   </div>
 
-                  {/* Timestamp Play Button */}
-                  <span className="flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                    <Play className="w-3 h-3 fill-current opacity-70 group-hover:opacity-100" />
-                    {formatTimestamp(seg.startSeconds)}
-                  </span>
+                  {/* Audio / Timestamp Play Action */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      if (item.startSeconds !== null) {
+                        e.stopPropagation();
+                        seekTo(item.startSeconds);
+                      } else {
+                        speakLine(item.id, item.text, e);
+                      }
+                    }}
+                    className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-300 group-hover:bg-blue-600 group-hover:text-white transition-colors"
+                  >
+                    {item.startSeconds !== null ? (
+                      <>
+                        <Play className="w-3 h-3 fill-current opacity-70 group-hover:opacity-100" />
+                        <span>{formatTimestamp(item.startSeconds)}</span>
+                      </>
+                    ) : isSpeaking ? (
+                      <>
+                        <VolumeX className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                        <span>Đang đọc...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-3.5 h-3.5 opacity-80 group-hover:opacity-100" />
+                        <span>Đọc câu</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 {/* Speech text or Masked Placeholder */}
@@ -229,7 +311,7 @@ export function TabDialogue({ segments }: TabDialogueProps) {
                       </span>
                       <button
                         type="button"
-                        onClick={(e) => toggleReveal(seg.id, e)}
+                        onClick={(e) => toggleReveal(item.id, e)}
                         className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium px-2 py-1 rounded bg-amber-950/40 hover:bg-amber-900/50 transition-colors"
                       >
                         <Eye className="w-3.5 h-3.5" />
@@ -238,13 +320,13 @@ export function TabDialogue({ segments }: TabDialogueProps) {
                     </div>
                   ) : (
                     <p className="whitespace-pre-line">
-                      {seg.text}
+                      {item.text}
                       {isTargetUserRole &&
                         maskTargetLines &&
-                        revealedSegmentIds[seg.id] && (
+                        revealedIds[item.id] && (
                           <button
                             type="button"
-                            onClick={(e) => toggleReveal(seg.id, e)}
+                            onClick={(e) => toggleReveal(item.id, e)}
                             className="ml-2 text-xs text-zinc-500 hover:text-zinc-300 underline"
                           >
                             (Ẩn lại)

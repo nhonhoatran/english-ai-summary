@@ -30,7 +30,7 @@ export function buildLessonAnalysisPrompt(
   return `You are building an English lesson page in the exact style of elllo.org, from the
 conversation transcript below.
 
-Produce FOUR things: lesson metadata, a grammar section, a quiz, and a vocabulary list.
+Produce FIVE things: lesson metadata, a grammar section, a quiz, a vocabulary list, and an ELLLO-style practice dialogue.
 
 === 1. METADATA ===
 - title: short, natural, describes the conversation topic (e.g. "Making a Sandwich").
@@ -82,6 +82,13 @@ over single easy nouns. For each:
   - meaning: a short plain-English definition (under 15 words).
   - example: ONE new sentence using the term correctly, different from the
     transcript's sentence.
+
+=== 5. ELLLO-STYLE DIALOGUE ===
+Create a brand-new, natural 2-person ELLLO-style dialogue (8 to 12 back-and-forth turns between 2 speakers, e.g. "Speaker A" and "Speaker B" or character names).
+CRITICAL RULES:
+- Do NOT simply copy the video transcript verbatim.
+- Construct a fresh 2-person conversation on the topic of the video transcript.
+- Heavily feature and naturally demonstrate the lesson's target \`grammarTheme\` and naturally incorporate some of the \`vocabItems\`.
 
 === TRANSCRIPT ===
 ${formattedTranscript}`;

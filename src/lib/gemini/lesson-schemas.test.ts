@@ -10,6 +10,7 @@ describe("lessonAnalysisSchema Zod Arity and Field Validation", () => {
     grammarPoints: validGeneratedLessonFixture.grammarPoints,
     quizQuestions: validGeneratedLessonFixture.quizQuestions,
     vocabItems: validGeneratedLessonFixture.vocabItems,
+    dialogueLines: validGeneratedLessonFixture.dialogueLines,
   };
 
   it("parses valid fixture successfully", () => {

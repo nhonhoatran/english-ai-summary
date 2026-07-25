@@ -48,12 +48,24 @@ model Lesson {
   updatedAt        DateTime     @updatedAt
 
   segments      TranscriptSegment[]
+  dialogueLines DialogueLine[]
   grammarPoints GrammarPoint[]
   quizQuestions QuizQuestion[]
   vocabItems    VocabItem[]
 
   @@unique([userId, videoId])
   @@index([userId, createdAt])
+}
+
+model DialogueLine {
+  id         String @id @default(cuid())
+  lessonId   String
+  orderIndex Int
+  speaker    String
+  text       String
+  lesson     Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, orderIndex])
 }
 
 model TranscriptSegment {

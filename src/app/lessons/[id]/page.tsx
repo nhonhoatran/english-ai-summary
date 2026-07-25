@@ -26,6 +26,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
     where: { id, userId: session.userId },
     include: {
       segments: { orderBy: { orderIndex: "asc" } },
+      dialogueLines: { orderBy: { orderIndex: "asc" } },
       grammarPoints: { orderBy: { orderIndex: "asc" } },
       quizQuestions: { orderBy: { orderIndex: "asc" } },
       vocabItems: {
@@ -95,7 +96,12 @@ export default async function LessonPage({ params }: LessonPageProps) {
           <LessonPlayerProvider videoId={lesson.videoId}>
             <LessonTabs
               scriptTab={<TabScript segments={lesson.segments} />}
-              dialogueTab={<TabDialogue segments={lesson.segments} />}
+              dialogueTab={
+                <TabDialogue
+                  dialogueLines={lesson.dialogueLines}
+                  segments={lesson.segments}
+                />
+              }
               grammarTab={
                 <TabGrammar
                   grammarTheme={lesson.grammarTheme}

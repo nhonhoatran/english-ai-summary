@@ -123,4 +123,10 @@ export const validGeneratedLessonFixture: GeneratedLesson = {
       example: "His graduation ceremony was held in June.",
     },
   ],
+  dialogueLines: [
+    { speaker: "Alice", text: "Have you ever visited London?" },
+    { speaker: "Bob", text: "Yes, I went there two years ago. It was amazing!" },
+    { speaker: "Alice", text: "That sounds wonderful! What did you do there?" },
+    { speaker: "Bob", text: "I visited the British Museum and walked around the parks." },
+  ],
 };
