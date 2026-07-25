@@ -1,0 +1,142 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IngestStatus {
+  PENDING
+  GENERATING
+  READY
+  FAILED
+}
+
+enum FsrsState {
+  New
+  Learning
+  Review
+  Relearning
+}
+
+enum FsrsRating {
+  Manual
+  Again
+  Hard
+  Good
+  Easy
+}
+
+model Lesson {
+  id               String       @id @default(cuid())
+  videoId          String       @unique // YouTube 11-char id, canonical key
+  videoUrl         String
+  title            String
+  description      String? // 1-line, elllo-style
+  durationSec      Int?
+  grammarTheme     String? // the ONE dominant structure
+  transcriptSource String // "youtube-captions" | "gemini"
+  status           IngestStatus @default(PENDING)
+  errorMessage     String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  segments      TranscriptSegment[]
+  grammarPoints GrammarPoint[]
+  quizQuestions QuizQuestion[]
+  vocabItems    VocabItem[]
+}
+
+model TranscriptSegment {
+  id           String @id @default(cuid())
+  lessonId     String
+  orderIndex   Int
+  startSeconds Int // for player.seekTo()
+  speaker      String
+  text         String
+  lesson       Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, orderIndex])
+  @@index([lessonId, startSeconds])
+}
+
+model GrammarPoint {
+  id          String   @id @default(cuid())
+  lessonId    String
+  orderIndex  Int // 1..4
+  explanation String // one sentence
+  examples    String[] // exactly 4, INVENTED not quoted
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, orderIndex])
+}
+
+model QuizQuestion {
+  id           String   @id @default(cuid())
+  lessonId     String
+  orderIndex   Int // 1..5
+  prompt       String // gap-fill, blank as "_______"
+  options      String[] // exactly 3
+  correctIndex Int // 0..2
+  lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, orderIndex])
+}
+
+model VocabItem {
+  id         String     @id @default(cuid())
+  lessonId   String
+  orderIndex Int
+  term       String
+  meaning    String
+  example    String
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  flashcard  Flashcard?
+
+  @@unique([lessonId, orderIndex])
+}
+
+model Flashcard {
+  id          String    @id @default(cuid())
+  vocabItemId String    @unique // save-to-deck is 1:1 with a vocab item
+  vocabItem   VocabItem @relation(fields: [vocabItemId], references: [id], onDelete: Cascade)
+
+  // --- ts-fsrs Card, field names mirrored from the library ---
+  due           DateTime
+  stability     Float
+  difficulty    Float
+  elapsedDays   Int // maps Card.elapsed_days (deprecated in ts-fsrs 6.x)
+  scheduledDays Int
+  learningSteps Int
+  reps          Int
+  lapses        Int
+  state         FsrsState
+  lastReview    DateTime?
+
+  createdAt  DateTime    @default(now())
+  reviewLogs ReviewLog[]
+
+  @@index([due]) // review queue: due <= now ORDER BY due
+}
+
+model ReviewLog {
+  id              String     @id @default(cuid())
+  flashcardId     String
+  flashcard       Flashcard  @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+  rating          FsrsRating
+  state           FsrsState
+  due             DateTime
+  stability       Float
+  difficulty      Float
+  elapsedDays     Int
+  lastElapsedDays Int
+  scheduledDays   Int
+  learningSteps   Int
+  reviewedAt      DateTime // maps ReviewLog.review
+
+  @@index([flashcardId, reviewedAt])
+}

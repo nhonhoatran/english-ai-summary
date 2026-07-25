@@ -8,7 +8,7 @@
 
 ## Overview
 - **Priority:** P1
-- **Status:** pending
+- **Status:** completed
 - **Effort:** 2h
 - **Description:** Model the persisted lesson. This schema IS the app's value proposition — AI runs once at ingest, everything after is a DB read. Schema must hold the full elllo-shaped lesson (transcript turns, 4 grammar points x 4 examples, 5 quiz questions x 3 options, vocab) plus FSRS card state.
 
@@ -221,20 +221,20 @@ Prisma `String[]` requires Postgres — fine, Postgres is the only target.
 11. `pnpm typecheck`. Commit: `feat: add prisma schema for lessons and fsrs flashcards`.
 
 ## Todo List
-- [ ] Reachable dev Postgres confirmed via `psql`
-- [ ] Install prisma + @prisma/client
-- [ ] `prisma init` (verify `.env` not clobbered)
-- [ ] Write `schema.prisma` (7 models, 3 enums)
-- [ ] `migrate dev --create-only`
-- [ ] Review generated SQL (cascades, uniques, `due` index)
-- [ ] Apply migration
-- [ ] `prisma generate`
-- [ ] `src/lib/db.ts` singleton
-- [ ] `src/lib/fsrs-mapping.ts` converters
-- [ ] Manual seed + single-query read + cascade-delete verification
-- [ ] `pnpm typecheck` green
-- [ ] Add db:migrate/db:generate/db:studio scripts (NO db:push)
-- [ ] Commit
+- [x] Reachable dev Postgres confirmed via `psql`
+- [x] Install prisma + @prisma/client
+- [x] `prisma init` (verify `.env` not clobbered)
+- [x] Write `schema.prisma` (7 models, 3 enums)
+- [x] `migrate dev --create-only`
+- [x] Review generated SQL (cascades, uniques, `due` index)
+- [x] Apply migration
+- [x] `prisma generate`
+- [x] `src/lib/db.ts` singleton
+- [x] `src/lib/fsrs-mapping.ts` converters
+- [x] Manual seed + single-query read + cascade-delete verification
+- [x] `pnpm typecheck` green
+- [x] Add db:migrate/db:generate/db:studio scripts (NO db:push)
+- [x] Commit
 
 ## Success Criteria
 - `prisma migrate status` reports the DB in sync with migration history, zero pending.
