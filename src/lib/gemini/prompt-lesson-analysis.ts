@@ -84,11 +84,13 @@ over single easy nouns. For each:
     transcript's sentence.
 
 === 5. ELLLO-STYLE DIALOGUE ===
-Create a brand-new, natural 2-person ELLLO-style dialogue (8 to 12 back-and-forth turns between 2 speakers, e.g. "Speaker A" and "Speaker B" or character names).
-CRITICAL RULES:
-- Do NOT simply copy the video transcript verbatim.
-- Construct a fresh 2-person conversation on the topic of the video transcript.
-- Heavily feature and naturally demonstrate the lesson's target \`grammarTheme\` and naturally incorporate some of the \`vocabItems\`.
+Create an extended, natural 2-person ELLLO-style dialogue (between 14 and 20 back-and-forth turns between 2 speakers, e.g. "Speaker A" and "Speaker B" or character names like Meg and Todd).
+
+STRICT CONTEXT ALIGNMENT & LENGTH RULES:
+- STRICT CONTEXT ANCHORING: The dialogue MUST be deeply grounded in the EXACT context, situation, story, and topic of the video transcript below. Do NOT invent unrelated scenarios or let the conversation drift away from the video's core topic.
+- EXTENDED DIALOGUE LENGTH: Provide a full, detailed discussion with AT LEAST 14 to 20 back-and-forth turns so learners have substantial dialogue for practice.
+- GRAMMAR & VOCABULARY INTEGRATION: The dialogue must naturally demonstrate the target \`grammarTheme\` and naturally use several extracted \`vocabItems\`.
+- NATURAL CONVERSATION FLOW: Speakers ask follow-up questions, express interest, give natural reactions, and elaborate on details just like authentic ELLLO listening dialogues.
 
 === TRANSCRIPT ===
 ${formattedTranscript}`;
