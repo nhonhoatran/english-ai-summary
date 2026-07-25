@@ -8,7 +8,7 @@
 
 ## Overview
 - **Priority:** P1
-- **Status:** pending
+- **Status:** complete
 - **Effort:** 3h
 - **Description:** The write path. Paste one YouTube URL → resolve a transcript (captions first, Gemini fallback) → generate the lesson → persist atomically. After this phase the app has data; Phase 05 only reads it.
 
@@ -125,23 +125,23 @@ A URL with BOTH `v=` and `list=` → treat as the single video (`v=`), ignore `l
 9. `pnpm typecheck`. Commit: `feat: add lesson ingest pipeline with caption fetch and gemini fallback`.
 
 ## Todo List
-- [ ] `pnpm add @danielxceron/youtube-transcript@1.2.6`
-- [ ] `parse-youtube-url.ts` (pure, rejects playlists)
-- [ ] `fetch-youtube-captions.ts` (returns null, never throws)
-- [ ] **Empirically verify caption offset unit is ms**
-- [ ] `ingest-lesson.ts` orchestrator
-- [ ] Atomic `$transaction` persist with explicit orderIndex convention
-- [ ] `ingest-lesson-action.ts` server action
-- [ ] `add-lesson-form.tsx` with honest long-running pending state
-- [ ] Test: captioned video
-- [ ] Test: uncaptioned video
-- [ ] **Test: forced caption failure → Gemini fallback works**
-- [ ] Test: duplicate URL → zero tokens
-- [ ] Test: playlist rejected
-- [ ] Test: garbage rejected pre-API
-- [ ] Test: private video → FAILED + clear message
-- [ ] `pnpm typecheck` green
-- [ ] Commit
+- [x] `pnpm add @danielxceron/youtube-transcript@1.2.6`
+- [x] `parse-youtube-url.ts` (pure, rejects playlists)
+- [x] `fetch-youtube-captions.ts` (returns null, never throws)
+- [x] **Empirically verify caption offset unit is ms**
+- [x] `ingest-lesson.ts` orchestrator
+- [x] Atomic `$transaction` persist with explicit orderIndex convention
+- [x] `ingest-lesson-action.ts` server action
+- [x] `add-lesson-form.tsx` with honest long-running pending state
+- [x] Test: captioned video
+- [x] Test: uncaptioned video
+- [x] **Test: forced caption failure → Gemini fallback works**
+- [x] Test: duplicate URL → zero tokens
+- [x] Test: playlist rejected
+- [x] Test: garbage rejected pre-API
+- [x] Test: private video → FAILED + clear message
+- [x] `pnpm typecheck` green
+- [x] Commit
 
 ## Success Criteria
 - Pasting a fresh YouTube URL produces a `READY` lesson row with: ≥1 segment, exactly 4 grammar points, exactly 5 quiz questions, 6–10 vocab items.
