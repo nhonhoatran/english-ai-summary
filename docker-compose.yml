@@ -1,14 +1,11 @@
-name: english-summary
-
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: english_summary_app
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3000:3000"
+      - "${PORT:-3000}:3000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     env_file:

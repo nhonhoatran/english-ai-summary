@@ -1,133 +1,64 @@
-# Production VPS Deployment Guide
+# Dokploy & Production VPS Deployment Guide
 
-This guide documents how to deploy the YouTube English Lesson App on a VPS using Docker Compose connecting to an external PostgreSQL database.
-
----
-
-## Prerequisites
-
-- VPS running Linux (Ubuntu 22.04+ or similar) with **x86_64** architecture.
-- **Docker** and **Docker Compose** installed.
-- PostgreSQL database running as an external service (or on the host machine / managed DB provider).
-- A domain name pointing to your VPS IP address.
-- Reverse proxy (e.g. Caddy or Nginx) with SSL/TLS certificate (HTTPS is mandatory because session cookies are marked `Secure`).
+This guide documents how to deploy the YouTube English Lesson App on Dokploy (or standalone Docker Compose) connecting to an external PostgreSQL database.
 
 ---
 
-## Step 1: Initial VPS Setup
+## Deploying on Dokploy
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url> /opt/english-summary
-   cd /opt/english-summary
-   ```
+Dokploy manages multi-service deployments cleanly on your VPS without container naming conflicts.
 
-2. **Generate Auth Secret:**
-   Generate a 32+ byte random hex string:
-   ```bash
-   openssl rand -hex 32
-   ```
+### Dokploy Setup Steps:
 
-3. **Create `.env` File:**
-   Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
+1. **Create New Application / Compose Service in Dokploy:**
+   - Select **Application** or **Compose** deployment type.
+   - Point to your Git Repository branch (e.g. `main`).
 
-   Edit `.env` with your actual production credentials and external PostgreSQL connection string:
+2. **Environment Variables:**
+   In the Dokploy Environment Variables panel, add:
    ```env
-   # Gemini API Key
    GEMINI_API_KEY=your_actual_gemini_api_key
-
-   # Single shared password to access the app
    APP_PASSWORD=your_strong_password_here
-
-   # HMAC Secret generated in step 2
-   AUTH_SECRET=the_generated_openssl_hex_string
-
-   # External PostgreSQL database connection URL
-   # If Postgres is running on host machine, use host.docker.internal or host IP:
-   # DATABASE_URL=postgresql://user:password@host.docker.internal:5432/english_summary
-   DATABASE_URL=postgresql://user:password@db_host:5432/english_summary
-
-   # Gemini Model
+   AUTH_SECRET=your_32plus_character_hex_secret
+   DATABASE_URL=postgresql://user:password@host.docker.internal:5432/english_summary
    GEMINI_MODEL=gemini-3.6-flash
    ```
 
+   > **Note for Host Postgres:** If your PostgreSQL runs directly on the VPS host OS outside Dokploy, use `host.docker.internal` as the host in `DATABASE_URL` (e.g., `postgresql://postgres:password@host.docker.internal:5432/english_summary`).
+
+3. **Deploy:**
+   - Dokploy automatically builds the image using [Dockerfile](file:///d:/MyProject/english-summary/Dockerfile) / [docker-compose.yml](file:///d:/MyProject/english-summary/docker-compose.yml).
+   - Dokploy dynamically routes domain traffic via Traefik/Nginx reverse proxy directly to internal port `3000` with automatic HTTPS/TLS certificates.
+
 ---
 
-## Step 2: Build and Launch Application Container
+## Standalone Docker Compose Deployment
 
-Run Docker Compose to build and start the app container:
+If deploying manually without Dokploy:
 
+### Step 1: Prepare `.env`
+Create `.env` with required variables:
+```env
+GEMINI_API_KEY=your_actual_gemini_api_key
+APP_PASSWORD=your_strong_password_here
+AUTH_SECRET=openssl_rand_hex_32_output
+DATABASE_URL=postgresql://user:password@host.docker.internal:5432/english_summary
+GEMINI_MODEL=gemini-3.6-flash
+```
+
+### Step 2: Build & Start
 ```bash
 docker compose up -d --build
 ```
 
-**What happens on boot:**
-1. App container starts up and resolves the external database URL.
-2. Entrypoint executes `npx prisma migrate deploy`, automatically applying any pending database migrations to your external PostgreSQL database.
-3. Next.js standalone server starts on `127.0.0.1:3000`.
-
-Check container status and logs:
-```bash
-docker compose ps
-docker compose logs -f app
-```
+**Boot Process:**
+- Container starts up and runs `npx prisma migrate deploy` automatically applying database migrations to your PostgreSQL database.
+- Next.js standalone server starts on port `3000`.
 
 ---
 
-## Step 3: Configure Reverse Proxy & TLS (HTTPS)
+## Database Migration & Upgrades
 
-Session cookies use `HttpOnly; Secure; SameSite=Lax`. Browsers will **not** save `Secure` cookies over plain HTTP (non-localhost). You **must** serve the app behind HTTPS.
-
-### Option A: Caddy (Recommended)
-
-Install Caddy and add to `/etc/caddy/Caddyfile`:
-
-```caddy
-yourdomain.com {
-    reverse_proxy 127.0.0.1:3000
-}
-```
-
-Reload Caddy:
-```bash
-sudo systemctl reload caddy
-```
-
-### Option B: Nginx + Certbot
-
-Nginx configuration block (`/etc/nginx/sites-available/english-summary`):
-
-```nginx
-server {
-    server_name yourdomain.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-Obtain TLS certificate:
-```bash
-sudo certbot --nginx -d yourdomain.com
-```
-
----
-
-## Step 4: Application Updates / Upgrades
-
-When pulling new code changes:
-
-```bash
-git pull origin main
-docker compose up -d --build
-```
-
-Docker Compose will rebuild the app container and apply any new Prisma database migrations automatically to your external database upon container boot.
+When pushing code updates:
+- Dokploy auto-triggers build on `git push`.
+- Prisma migrations execute automatically on startup via `docker-entrypoint.sh`.
