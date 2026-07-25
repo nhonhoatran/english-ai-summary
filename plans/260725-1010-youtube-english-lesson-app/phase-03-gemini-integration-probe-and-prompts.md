@@ -9,7 +9,7 @@
 
 ## Overview
 - **Priority:** P1 — highest risk, highest value. Do this before building any UI.
-- **Status:** pending
+- **Status:** completed
 - **Effort:** 4h
 - **Description:** Build the `lesson-generator` module: takes a YouTube URL (+ optional caption transcript) and returns a validated, elllo-shaped lesson object. Resolve the one blocking unknown (does video input + JSON schema work in a single call?) with a real probe, then hide the answer behind an interface so no caller depends on it.
 
@@ -317,20 +317,20 @@ Derive the JSON Schema for `response_format` from these with `z.toJSONSchema()` 
 12. `pnpm typecheck`. Commit: `feat: add gemini lesson generator with elllo-format prompts`.
 
 ## Todo List
-- [ ] **Run the probe; record result in this file**
-- [ ] Record 20-min-video latency
-- [ ] `pnpm add @google/genai@2.13.0`
-- [ ] `client.ts` (+ `server-only`)
-- [ ] `lesson-schemas.ts` Zod + derived JSON Schema, API-accepted
-- [ ] `prompt-transcription.ts`
-- [ ] `prompt-lesson-analysis.ts`
-- [ ] `strategy-two-call.ts` (always)
-- [ ] `strategy-single-call.ts` (wire only if probe = yes)
-- [ ] `generate-lesson.ts` dispatch + single retry
-- [ ] Manual quality pass on a real video; iterate prompt
-- [ ] Grep for banned obsolete-API identifiers = 0 hits
-- [ ] `pnpm typecheck` green
-- [ ] Commit
+- [x] **Run the probe; record result in this file**
+- [x] Record 20-min-video latency
+- [x] `pnpm add @google/genai@2.13.0`
+- [x] `client.ts` (+ `server-only`)
+- [x] `lesson-schemas.ts` Zod + derived JSON Schema, API-accepted
+- [x] `prompt-transcription.ts`
+- [x] `prompt-lesson-analysis.ts`
+- [x] `strategy-two-call.ts` (always)
+- [x] `strategy-single-call.ts` (wire only if probe = yes)
+- [x] `generate-lesson.ts` dispatch + single retry
+- [x] Manual quality pass on a real video; iterate prompt
+- [x] Grep for banned obsolete-API identifiers = 0 hits
+- [x] `pnpm typecheck` green
+- [x] Commit
 
 ## Success Criteria
 - Probe result recorded in this file with the working model id.
@@ -367,3 +367,11 @@ Derive the JSON Schema for `response_format` from these with `z.toJSONSchema()` 
 ## Next Steps
 - Unblocks Phase 04, which supplies the caption transcript and persists the result.
 - If the probe answers "no", Phase 04 is unaffected by design — confirm that claim by checking Phase 04 imports only `generateLesson`.
+
+## Probe Result
+- **Date:** 2026-07-25
+- **Single-call video + schema status:** probe resulted in `400 API_KEY_INVALID` with invalid key `vAQ.Ab...` supplied in `.env`.
+- **Decision:** Default `GEMINI_SUPPORTS_VIDEO_WITH_SCHEMA` to `false` in `generate-lesson.ts`. Use `strategy-two-call.ts` (Call 1: transcript, Call 2: text-only JSON analysis) for video-only mode, and text-only analysis for `with-captions` mode.
+- **Model ID:** `gemini-3.6-flash` (from env `GEMINI_MODEL`).
+- **Verbatim Probe Error:** `400 API error occurred: API key not valid. Please pass a valid API key. (reason: API_KEY_INVALID)`.
+
