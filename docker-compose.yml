@@ -1,22 +1,6 @@
 name: english-summary
 
 services:
-  postgres:
-    image: postgres:17-alpine
-    container_name: english_summary_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
-      POSTGRES_DB: english_summary
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d english_summary"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   app:
     build:
       context: .
@@ -25,11 +9,7 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:3000:3000"
-    depends_on:
-      postgres:
-        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - .env
-
-volumes:
-  pgdata:

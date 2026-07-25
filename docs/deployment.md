@@ -1,6 +1,6 @@
 # Production VPS Deployment Guide
 
-This guide documents how to deploy the YouTube English Lesson App on a VPS using Docker Compose.
+This guide documents how to deploy the YouTube English Lesson App on a VPS using Docker Compose connecting to an external PostgreSQL database.
 
 ---
 
@@ -8,6 +8,7 @@ This guide documents how to deploy the YouTube English Lesson App on a VPS using
 
 - VPS running Linux (Ubuntu 22.04+ or similar) with **x86_64** architecture.
 - **Docker** and **Docker Compose** installed.
+- PostgreSQL database running as an external service (or on the host machine / managed DB provider).
 - A domain name pointing to your VPS IP address.
 - Reverse proxy (e.g. Caddy or Nginx) with SSL/TLS certificate (HTTPS is mandatory because session cookies are marked `Secure`).
 
@@ -33,7 +34,7 @@ This guide documents how to deploy the YouTube English Lesson App on a VPS using
    cp .env.example .env
    ```
 
-   Edit `.env` with your actual production credentials:
+   Edit `.env` with your actual production credentials and external PostgreSQL connection string:
    ```env
    # Gemini API Key
    GEMINI_API_KEY=your_actual_gemini_api_key
@@ -44,8 +45,10 @@ This guide documents how to deploy the YouTube English Lesson App on a VPS using
    # HMAC Secret generated in step 2
    AUTH_SECRET=the_generated_openssl_hex_string
 
-   # Internal Docker database connection URL (points to 'postgres' service)
-   DATABASE_URL=postgresql://postgres:postgrespassword@postgres:5432/english_summary
+   # External PostgreSQL database connection URL
+   # If Postgres is running on host machine, use host.docker.internal or host IP:
+   # DATABASE_URL=postgresql://user:password@host.docker.internal:5432/english_summary
+   DATABASE_URL=postgresql://user:password@db_host:5432/english_summary
 
    # Gemini Model
    GEMINI_MODEL=gemini-3.6-flash
@@ -53,19 +56,18 @@ This guide documents how to deploy the YouTube English Lesson App on a VPS using
 
 ---
 
-## Step 2: Build and Launch Containers
+## Step 2: Build and Launch Application Container
 
-Run Docker Compose to build the Next.js standalone image and start the PostgreSQL database and application containers:
+Run Docker Compose to build and start the app container:
 
 ```bash
 docker compose up -d --build
 ```
 
 **What happens on boot:**
-1. Postgres starts up and runs its health check (`pg_isready`).
-2. App container waits until Postgres is ready (`service_healthy`).
-3. Entrypoint executes `npx prisma migrate deploy` automatically applying database migrations.
-4. Next.js standalone server starts on `127.0.0.1:3000`.
+1. App container starts up and resolves the external database URL.
+2. Entrypoint executes `npx prisma migrate deploy`, automatically applying any pending database migrations to your external PostgreSQL database.
+3. Next.js standalone server starts on `127.0.0.1:3000`.
 
 Check container status and logs:
 ```bash
@@ -119,27 +121,7 @@ sudo certbot --nginx -d yourdomain.com
 
 ---
 
-## Step 4: Database Backup & Maintenance
-
-Database files are persisted in a named Docker volume (`pgdata`).
-
-### Backup Database
-
-To create a single-file database backup:
-```bash
-docker exec -t english_summary_db pg_dump -U postgres english_summary > backup_$(date +%Y%m%d_%H%M%S).sql
-```
-
-### Restore Database
-
-To restore from a SQL backup:
-```bash
-cat backup_filename.sql | docker exec -i english_summary_db psql -U postgres -d english_summary
-```
-
----
-
-## Step 5: Application Updates / Upgrades
+## Step 4: Application Updates / Upgrades
 
 When pulling new code changes:
 
@@ -148,4 +130,4 @@ git pull origin main
 docker compose up -d --build
 ```
 
-Docker Compose will rebuild the app container and apply any new Prisma database migrations automatically during container startup.
+Docker Compose will rebuild the app container and apply any new Prisma database migrations automatically to your external database upon container boot.
