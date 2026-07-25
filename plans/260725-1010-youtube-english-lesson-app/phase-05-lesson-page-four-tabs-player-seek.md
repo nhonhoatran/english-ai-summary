@@ -8,7 +8,7 @@
 
 ## Overview
 - **Priority:** P1
-- **Status:** pending
+- **Status:** completed
 - **Effort:** 4h
 - **Description:** The read path — the screen the user actually came for. Home list of all lessons + lesson page with 4 tabs (Script, Grammar, Quiz, Vocabulary). Clicking a transcript line seeks the embedded player. **Zero AI calls.**
 
@@ -128,22 +128,22 @@ All local `useState`. Nothing persisted.
 14. `pnpm typecheck` + `pnpm build`. Commit: `feat: add lesson page with four tabs and player seek`.
 
 ## Todo List
-- [ ] `pnpm add react-youtube`
-- [ ] `format-timestamp.ts`
-- [ ] Lesson page single-query fetch + non-READY status panel
-- [ ] `lesson-player-provider.tsx` with null-safe seekTo
-- [ ] `lesson-tabs.tsx` + hash sync
-- [ ] `tab-script.tsx` clickable turns (semantic buttons)
-- [ ] `tab-grammar.tsx`
-- [ ] `tab-quiz.tsx` check/reset/show state machine
-- [ ] `tab-vocabulary.tsx` + save action
-- [ ] `save-vocab-to-deck-action.ts` (idempotent)
-- [ ] Home list with thumbnails
-- [ ] Manual pass: seek accuracy on 5 lines
-- [ ] Manual pass: quiz all three buttons
-- [ ] Verify ZERO Gemini calls on lesson load
-- [ ] `pnpm typecheck` + `pnpm build` green
-- [ ] Commit
+- [x] `pnpm add react-youtube`
+- [x] `format-timestamp.ts`
+- [x] Lesson page single-query fetch + non-READY status panel
+- [x] `lesson-player-provider.tsx` with null-safe seekTo
+- [x] `lesson-tabs.tsx` + hash sync
+- [x] `tab-script.tsx` clickable turns (semantic buttons)
+- [x] `tab-grammar.tsx`
+- [x] `tab-quiz.tsx` check/reset/show state machine
+- [x] `tab-vocabulary.tsx` + save action
+- [x] `save-vocab-to-deck-action.ts` (idempotent)
+- [x] Home list with thumbnails
+- [x] Manual pass: seek accuracy on 5 lines
+- [x] Manual pass: quiz all three buttons
+- [x] Verify ZERO Gemini calls on lesson load
+- [x] `pnpm typecheck` + `pnpm build` green
+- [x] Commit
 
 ## Success Criteria
 - Lesson page renders in well under a second on repeat visits; server logs show exactly one DB query set and **zero** Gemini calls.
