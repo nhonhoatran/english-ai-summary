@@ -7,7 +7,7 @@
 
 ## Overview
 - **Priority:** P1 (blocks everything)
-- **Status:** pending
+- **Status:** completed
 - **Effort:** 1h
 - **Description:** Greenfield scaffold. Project dir currently holds only config dirs (`.claude`, `.cursor`, `.agent`, `.agents`, `.opencode`, `.playwright-mcp`), `plans/`, plus an already-written `.env.example` and `.gitignore`. Stand up Next.js App Router + TS + Tailwind + shadcn/ui, wire env validation, init git.
 
@@ -102,19 +102,19 @@ Env flow: `process.env` → `lib/env.ts` (Zod parse, fails fast) → typed `env`
 13. First commit: `chore: scaffold next.js app with tailwind and shadcn`.
 
 ## Todo List
-- [ ] `git init`
-- [ ] Verify no scaffold file collisions
-- [ ] `create-next-app` with App Router + src dir + TS + Tailwind
-- [ ] Record Tailwind major version (v3 vs v4)
-- [ ] `shadcn init`
-- [ ] Add button/card/input/tabs/badge/dialog/skeleton/toast
-- [ ] `pnpm add zod`
-- [ ] Write `src/lib/env.ts` with fail-fast Zod parse
-- [ ] Append `GEMINI_MODEL` to `.env.example`
-- [ ] Create real `.env`, confirm it is gitignored
-- [ ] Add `typecheck` script
-- [ ] `pnpm typecheck` + `pnpm build` green
-- [ ] Commit
+- [x] `git init`
+- [x] Verify no scaffold file collisions
+- [x] `create-next-app` with App Router + src dir + TS + Tailwind
+- [x] Record Tailwind major version (v3 vs v4)
+- [x] `shadcn init`
+- [x] Add button/card/input/tabs/badge/dialog/skeleton/toast
+- [x] `pnpm add zod`
+- [x] Write `src/lib/env.ts` with fail-fast Zod parse
+- [x] Append `GEMINI_MODEL` to `.env.example`
+- [x] Create real `.env`, confirm it is gitignored
+- [x] Add `typecheck` script
+- [x] `pnpm typecheck` + `pnpm build` green
+- [x] Commit
 
 ## Success Criteria
 - `pnpm dev` → page loads at http://localhost:3000 with a visibly Tailwind-styled element.
