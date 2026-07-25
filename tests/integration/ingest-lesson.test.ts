@@ -22,13 +22,14 @@ describe("ingestLesson integration", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     await resetTestDatabase();
-    const user = await db.user.create({ data: { phone: "0900000000" } });
+    const phone = "09" + Math.floor(Math.random() * 100000000).toString().padStart(8, "0");
+    const user = await db.user.create({ data: { phone } });
     testUserId = user.id;
+    vi.mocked(generateLesson).mockResolvedValue(validGeneratedLessonFixture);
   });
 
   it("persists a complete READY lesson with stubbed generator and captions", async () => {
     vi.mocked(fetchYoutubeCaptions).mockResolvedValue(sampleCaptionSegmentsFixture);
-    vi.mocked(generateLesson).mockResolvedValue(validGeneratedLessonFixture);
 
     const rawUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
     const res = await ingestLesson(rawUrl, testUserId);
@@ -64,7 +65,6 @@ describe("ingestLesson integration", () => {
 
   it("uses transcriptSource='gemini' when fetchYoutubeCaptions returns null", async () => {
     vi.mocked(fetchYoutubeCaptions).mockResolvedValue(null);
-    vi.mocked(generateLesson).mockResolvedValue(validGeneratedLessonFixture);
 
     const rawUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
     const res = await ingestLesson(rawUrl, testUserId);
@@ -78,7 +78,6 @@ describe("ingestLesson integration", () => {
 
   it("reuses existing lesson for same URL for the same user", async () => {
     vi.mocked(fetchYoutubeCaptions).mockResolvedValue(sampleCaptionSegmentsFixture);
-    vi.mocked(generateLesson).mockResolvedValue(validGeneratedLessonFixture);
 
     const rawUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 

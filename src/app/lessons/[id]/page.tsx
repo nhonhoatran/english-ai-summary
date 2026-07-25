@@ -11,6 +11,7 @@ import { TabGrammar } from "@/components/lesson/tab-grammar";
 import { TabQuiz } from "@/components/lesson/tab-quiz";
 import { TabVocabulary } from "@/components/lesson/tab-vocabulary";
 import { requireAuth } from "@/lib/auth/require-auth";
+import { DeleteLessonButton } from "@/components/lesson/delete-lesson-button";
 
 interface LessonPageProps {
   params: Promise<{ id: string }>;
@@ -54,14 +55,21 @@ export default async function LessonPage({ params }: LessonPageProps) {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Back navigation */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to all lessons
-        </Link>
+        {/* Back navigation & Actions */}
+        <div className="flex items-center justify-between">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to all lessons
+          </Link>
+          <DeleteLessonButton
+            lessonId={lesson.id}
+            redirectOnSuccess={true}
+            variant="button"
+          />
+        </div>
 
         {/* Lesson Header */}
         <div className="space-y-2">

@@ -4,6 +4,7 @@ import { IngestStatus } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Clock, AlertCircle, Loader2 } from "lucide-react";
 import { formatTimestamp } from "@/lib/format-timestamp";
+import { DeleteLessonButton } from "./delete-lesson-button";
 
 interface LessonListCardProps {
   lesson: {
@@ -42,14 +43,17 @@ export function LessonListCard({ lesson }: LessonListCardProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-w-0 space-y-2">
+        <div className="flex-1 min-w-0 space-y-2 w-full">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-base text-zinc-100 group-hover:text-blue-400 transition-colors line-clamp-2">
               {lesson.title}
             </h3>
-            {lesson.status !== IngestStatus.READY && (
-              <StatusBadge status={lesson.status} />
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {lesson.status !== IngestStatus.READY && (
+                <StatusBadge status={lesson.status} />
+              )}
+              <DeleteLessonButton lessonId={lesson.id} variant="icon" />
+            </div>
           </div>
 
           {lesson.description && (
@@ -58,7 +62,7 @@ export function LessonListCard({ lesson }: LessonListCardProps) {
             </p>
           )}
 
-          <div className="flex items-center gap-3 text-[11px] text-zinc-500 pt-1">
+          <div className="flex items-center justify-between text-[11px] text-zinc-500 pt-1">
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {new Date(lesson.createdAt).toLocaleDateString()}

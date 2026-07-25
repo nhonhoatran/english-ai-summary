@@ -7,6 +7,8 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
+    fileParallelism: false,
+    maxConcurrency: 1,
     include: ["src/**/*.test.ts", "tests/**/*.test.ts"],
     setupFiles: ["tests/setup.ts"],
   },
