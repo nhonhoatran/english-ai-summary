@@ -7,6 +7,7 @@ import { ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
 import { LessonPlayerProvider } from "@/components/lesson/lesson-player-provider";
 import { LessonTabs } from "@/components/lesson/lesson-tabs";
 import { TabScript } from "@/components/lesson/tab-script";
+import { TabDialogue } from "@/components/lesson/tab-dialogue";
 import { TabGrammar } from "@/components/lesson/tab-grammar";
 import { TabQuiz } from "@/components/lesson/tab-quiz";
 import { TabVocabulary } from "@/components/lesson/tab-vocabulary";
@@ -90,10 +91,11 @@ export default async function LessonPage({ params }: LessonPageProps) {
             errorMessage={lesson.errorMessage}
           />
         ) : (
-          /* Main Interactive Player & 4 Tabs */
+          /* Main Interactive Player & 5 Tabs */
           <LessonPlayerProvider videoId={lesson.videoId}>
             <LessonTabs
               scriptTab={<TabScript segments={lesson.segments} />}
+              dialogueTab={<TabDialogue segments={lesson.segments} />}
               grammarTab={
                 <TabGrammar
                   grammarTheme={lesson.grammarTheme}

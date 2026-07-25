@@ -3,13 +3,14 @@
 
 import { useState, useEffect, ReactNode } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { FileText, BookOpen, HelpCircle, BookMarked } from "lucide-react";
+import { FileText, BookOpen, HelpCircle, BookMarked, MessageSquare } from "lucide-react";
 
-const VALID_TABS = ["script", "grammar", "quiz", "vocab"] as const;
+const VALID_TABS = ["script", "dialogue", "grammar", "quiz", "vocab"] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
 interface LessonTabsProps {
   scriptTab: ReactNode;
+  dialogueTab: ReactNode;
   grammarTab: ReactNode;
   quizTab: ReactNode;
   vocabTab: ReactNode;
@@ -17,6 +18,7 @@ interface LessonTabsProps {
 
 export function LessonTabs({
   scriptTab,
+  dialogueTab,
   grammarTab,
   quizTab,
   vocabTab,
@@ -45,13 +47,21 @@ export function LessonTabs({
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-6">
-      <TabsList className="w-full justify-start bg-zinc-900 border border-zinc-800 p-1.5 rounded-xl h-auto gap-2">
+      <TabsList className="w-full justify-start bg-zinc-900 border border-zinc-800 p-1.5 rounded-xl h-auto gap-2 flex-wrap sm:flex-nowrap">
         <TabsTrigger
           value="script"
           className="flex-1 sm:flex-none py-2.5 px-4 rounded-lg text-zinc-400 data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-all text-sm font-medium gap-2"
         >
           <FileText className="w-4 h-4" />
           <span>Script</span>
+        </TabsTrigger>
+
+        <TabsTrigger
+          value="dialogue"
+          className="flex-1 sm:flex-none py-2.5 px-4 rounded-lg text-zinc-400 data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-all text-sm font-medium gap-2"
+        >
+          <MessageSquare className="w-4 h-4 text-blue-400" />
+          <span>Dialogue</span>
         </TabsTrigger>
 
         <TabsTrigger
@@ -81,6 +91,9 @@ export function LessonTabs({
 
       <TabsContent value="script" className="mt-4 focus-visible:outline-none">
         {scriptTab}
+      </TabsContent>
+      <TabsContent value="dialogue" className="mt-4 focus-visible:outline-none">
+        {dialogueTab}
       </TabsContent>
       <TabsContent value="grammar" className="mt-4 focus-visible:outline-none">
         {grammarTab}
