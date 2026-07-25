@@ -3,6 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import { ingestLesson } from "@/lib/ingest/ingest-lesson";
+import { requireAuth } from "@/lib/auth/require-auth";
 
 export type IngestActionResult =
   | { success: true; lessonId: string; reused: boolean }
@@ -11,6 +12,8 @@ export type IngestActionResult =
 export async function ingestLessonAction(
   url: string
 ): Promise<IngestActionResult> {
+  await requireAuth();
+
   if (!url || typeof url !== "string") {
     return { success: false, error: "Please enter a YouTube video URL." };
   }

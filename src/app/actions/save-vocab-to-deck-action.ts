@@ -4,6 +4,7 @@
 import { db } from "@/lib/db";
 import { createInitialCardData } from "@/lib/fsrs/create-initial-card";
 import { revalidatePath } from "next/cache";
+import { requireAuth } from "@/lib/auth/require-auth";
 
 export type SaveVocabResult =
   | { success: true; flashcardId: string }
@@ -12,6 +13,8 @@ export type SaveVocabResult =
 export async function saveVocabToDeckAction(
   vocabItemId: string
 ): Promise<SaveVocabResult> {
+  await requireAuth();
+
   if (!vocabItemId) {
     return { success: false, error: "Vocabulary item ID is required." };
   }

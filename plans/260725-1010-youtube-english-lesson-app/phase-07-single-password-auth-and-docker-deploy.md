@@ -135,23 +135,23 @@ volumes: { pgdata: }
 17. `pnpm typecheck` + `pnpm build`. Commit: `feat: add password gate and docker deployment`.
 
 ## Todo List
-- [ ] `AUTH_SECRET` in env schema + `.env.example`
-- [ ] `auth-cookie.ts` (Web Crypto, edge-safe, HMAC-signed)
-- [ ] `verify-password.ts` (constant-time)
-- [ ] `middleware.ts` default-deny matcher
-- [ ] `api/login` with validated `next` (open-redirect guard)
-- [ ] `api/logout`
-- [ ] `login/page.tsx`
-- [ ] `require-auth.ts` added to ALL THREE server actions (grep to confirm)
-- [ ] `output: "standalone"`
-- [ ] Dockerfile multi-stage (copies `prisma/` into runtime)
-- [ ] `.dockerignore` excludes `.env`
-- [ ] `docker-entrypoint.sh` runs `migrate deploy`, fails hard
-- [ ] `docker-compose.yml` with NAMED pgdata volume + healthcheck
-- [ ] `docs/deployment.md` incl. TLS + backup + upgrade
-- [ ] Auth test matrix (6 cases, incl. forged cookie + curl'd action)
-- [ ] `pnpm typecheck` + `pnpm build` green
-- [ ] Commit
+- [x] `AUTH_SECRET` in env schema + `.env.example`
+- [x] `auth-cookie.ts` (Web Crypto, edge-safe, HMAC-signed)
+- [x] `verify-password.ts` (constant-time)
+- [x] `middleware.ts` default-deny matcher
+- [x] `api/login` with validated `next` (open-redirect guard)
+- [x] `api/logout`
+- [x] `login/page.tsx`
+- [x] `require-auth.ts` added to ALL THREE server actions (grep to confirm)
+- [x] `output: "standalone"`
+- [x] Dockerfile multi-stage (copies `prisma/` into runtime)
+- [x] `.dockerignore` excludes `.env`
+- [x] `docker-entrypoint.sh` runs `migrate deploy`, fails hard
+- [x] `docker-compose.yml` with NAMED pgdata volume + healthcheck
+- [x] `docs/deployment.md` incl. TLS + backup + upgrade
+- [x] Auth test matrix (6 cases, incl. forged cookie + curl'd action)
+- [x] `pnpm typecheck` + `pnpm build` green
+- [x] Commit
 
 ## Success Criteria
 - Every route and all three server actions reject unauthenticated access; verified for actions by raw `curl` POST, not just by clicking the UI.

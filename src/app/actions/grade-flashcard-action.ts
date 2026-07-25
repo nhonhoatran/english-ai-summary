@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { Grade, Rating } from "ts-fsrs";
 import { gradeFlashcard } from "@/lib/fsrs/grade-flashcard";
 import { revalidatePath } from "next/cache";
+import { requireAuth } from "@/lib/auth/require-auth";
 
 export type GradeActionResult =
   | { success: true; nextDue: Date }
@@ -14,6 +15,8 @@ export async function gradeFlashcardAction(
   flashcardId: string,
   gradeNumber: number
 ): Promise<GradeActionResult> {
+  await requireAuth();
+
   if (!flashcardId) {
     return { success: false, error: "Flashcard ID is required." };
   }

@@ -2,6 +2,7 @@
 import { db } from "@/lib/db";
 import { AddLessonForm } from "@/components/add-lesson-form";
 import { LessonListCard } from "@/components/lesson/lesson-list-card";
+import { LogoutButton } from "@/components/logout-button";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
@@ -27,7 +28,10 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center p-4 sm:p-8">
       <main className="w-full max-w-4xl space-y-10">
-        <div className="flex flex-col items-center text-center space-y-3 pt-6">
+        <div className="flex justify-end w-full">
+          <LogoutButton />
+        </div>
+        <div className="flex flex-col items-center text-center space-y-3 pt-2">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
               YouTube English Lesson Generator
