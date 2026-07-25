@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
 
 export const transcriptSegmentSchema = z.object({
   startSeconds: z.number().int().min(0),
@@ -42,27 +41,79 @@ export type VocabItem = z.infer<typeof vocabItemSchema>;
 export type LessonAnalysis = z.infer<typeof lessonAnalysisSchema>;
 
 /**
- * Derives clean JSON Schema for Gemini API response_format.
- * Strips $schema and unsupported keywords if present.
+ * Clean OpenAPI Schema for Gemini API responseSchema.
  */
 export function getLessonAnalysisJsonSchema(): Record<string, unknown> {
-  const jsonSchema = zodToJsonSchema(lessonAnalysisSchema as unknown as Parameters<typeof zodToJsonSchema>[0], "LessonAnalysis") as Record<string, unknown>;
-  const target = (jsonSchema.definitions as Record<string, unknown>)?.LessonAnalysis ?? jsonSchema;
-  
-  const cleanSchema = JSON.parse(JSON.stringify(target));
-  delete cleanSchema.$schema;
-  delete cleanSchema.additionalProperties;
-  
-  return cleanSchema;
+  return {
+    type: "object",
+    properties: {
+      title: { type: "string" },
+      description: { type: "string" },
+      grammarTheme: { type: "string" },
+      grammarPoints: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            explanation: { type: "string" },
+            examples: {
+              type: "array",
+              items: { type: "string" },
+            },
+          },
+          required: ["explanation", "examples"],
+        },
+      },
+      quizQuestions: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            prompt: { type: "string" },
+            options: {
+              type: "array",
+              items: { type: "string" },
+            },
+            correctIndex: { type: "integer" },
+          },
+          required: ["prompt", "options", "correctIndex"],
+        },
+      },
+      vocabItems: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            term: { type: "string" },
+            meaning: { type: "string" },
+            example: { type: "string" },
+          },
+          required: ["term", "meaning", "example"],
+        },
+      },
+    },
+    required: [
+      "title",
+      "description",
+      "grammarTheme",
+      "grammarPoints",
+      "quizQuestions",
+      "vocabItems",
+    ],
+  };
 }
 
 export function getTranscriptJsonSchema(): Record<string, unknown> {
-  const jsonSchema = zodToJsonSchema(transcriptSchema as unknown as Parameters<typeof zodToJsonSchema>[0], "Transcript") as Record<string, unknown>;
-  const target = (jsonSchema.definitions as Record<string, unknown>)?.Transcript ?? jsonSchema;
-
-  const cleanSchema = JSON.parse(JSON.stringify(target));
-  delete cleanSchema.$schema;
-  delete cleanSchema.additionalProperties;
-
-  return cleanSchema;
+  return {
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        startSeconds: { type: "integer" },
+        speaker: { type: "string" },
+        text: { type: "string" },
+      },
+      required: ["startSeconds", "speaker", "text"],
+    },
+  };
 }

@@ -38,20 +38,16 @@ export async function executeTwoCallStrategy(
   } else {
     // Call 1: Transcribe video
     const transcriptionPrompt = buildTranscriptionPrompt();
-    const transcriptInteraction = await ai.interactions.create({
+    const transcriptResponse = await ai.models.generateContent({
       model: GEMINI_MODEL,
-      input: [
-        { type: "text", text: transcriptionPrompt },
-        { type: "video", uri: input.youtubeUrl },
-      ],
-      response_format: {
-        type: "text",
-        mime_type: "application/json",
-        schema: getTranscriptJsonSchema(),
+      contents: transcriptionPrompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: getTranscriptJsonSchema() as any,
       },
     });
 
-    const rawTranscriptJson = transcriptInteraction.output_text;
+    const rawTranscriptJson = transcriptResponse.text;
     if (!rawTranscriptJson) {
       throw new Error("Gemini returned empty transcription output");
     }
@@ -64,17 +60,16 @@ export async function executeTwoCallStrategy(
   const formattedTranscript = formatTranscriptForPrompt(transcript);
   const analysisPrompt = buildLessonAnalysisPrompt(formattedTranscript);
 
-  const analysisInteraction = await ai.interactions.create({
+  const analysisResponse = await ai.models.generateContent({
     model: GEMINI_MODEL,
-    input: [{ type: "text", text: analysisPrompt }],
-    response_format: {
-      type: "text",
-      mime_type: "application/json",
-      schema: getLessonAnalysisJsonSchema(),
+    contents: analysisPrompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: getLessonAnalysisJsonSchema() as any,
     },
   });
 
-  const rawAnalysisJson = analysisInteraction.output_text;
+  const rawAnalysisJson = analysisResponse.text;
   if (!rawAnalysisJson) {
     throw new Error("Gemini returned empty lesson analysis output");
   }
