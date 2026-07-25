@@ -13,6 +13,7 @@ export function AddLessonForm() {
   const [quizCount, setQuizCount] = useState<number>(5);
   const [vocabCount, setVocabCount] = useState<number>(10);
   const [grammarCount, setGrammarCount] = useState<number>(4);
+  const [dialogueCount, setDialogueCount] = useState<number>(20);
   const [showOptions, setShowOptions] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +36,7 @@ export function AddLessonForm() {
           quizCount,
           vocabCount,
           grammarCount,
+          dialogueCount,
         });
 
         if (!res.success) {
@@ -138,6 +140,26 @@ export function AddLessonForm() {
                 <option value={4}>4 điểm (Mặc định)</option>
                 <option value={6}>6 điểm</option>
                 <option value={8}>8 điểm</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5 sm:col-span-3">
+              <label className="block text-zinc-300 font-semibold">
+                💬 Số lượt thoại (Dialogue)
+              </label>
+              <select
+                value={dialogueCount}
+                onChange={(e) => setDialogueCount(Number(e.target.value))}
+                disabled={isPending}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 text-xs"
+              >
+                <option value={10}>10 lượt</option>
+                <option value={15}>15 lượt</option>
+                <option value={20}>20 lượt (Mặc định)</option>
+                <option value={25}>25 lượt</option>
+                <option value={30}>30 lượt</option>
+                <option value={40}>40 lượt</option>
+                <option value={50}>50 lượt</option>
               </select>
             </div>
           </div>
