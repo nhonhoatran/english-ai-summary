@@ -95,22 +95,22 @@ The `due(Again) < due(Good) < due(Easy)` assertion is the canary for the mapping
 10. `pnpm typecheck` + `pnpm test` + `pnpm build` all green. Commit: `test: add unit and integration test suite`.
 
 ## Todo List
-- [ ] Install vitest, `vitest.config.ts` with matching path alias
-- [ ] `test` / `test:watch` scripts
-- [ ] `fsrs-mapping.test.ts` (do first)
-- [ ] `parse-youtube-url.test.ts`
-- [ ] `format-timestamp.test.ts`
-- [ ] `grade-flashcard.test.ts` incl. Again<Good<Easy
-- [ ] `lesson-schemas.test.ts` arity rejections
-- [ ] `auth-cookie.test.ts` incl. tamper rejection
-- [ ] Fixtures (single shared `GeneratedLesson`)
-- [ ] Test DB via `migrate deploy` + reset helper
-- [ ] `ingest-lesson.test.ts` (real DB, stubbed generator)
-- [ ] `auth-guard.test.ts`
-- [ ] All tests pass with no weakened assertions
-- [ ] `docs/testing.md`
-- [ ] `pnpm typecheck` + `test` + `build` green
-- [ ] Commit
+- [x] Install vitest, `vitest.config.ts` with matching path alias
+- [x] `test` / `test:watch` scripts
+- [x] `fsrs-mapping.test.ts` (do first)
+- [x] `parse-youtube-url.test.ts`
+- [x] `format-timestamp.test.ts`
+- [x] `grade-flashcard.test.ts` incl. Again<Good<Easy
+- [x] `lesson-schemas.test.ts` arity rejections
+- [x] `auth-cookie.test.ts` incl. tamper rejection
+- [x] Fixtures (single shared `GeneratedLesson`)
+- [x] Test DB via `migrate deploy` + reset helper
+- [x] `ingest-lesson.test.ts` (real DB, stubbed generator)
+- [x] `auth-guard.test.ts`
+- [x] All tests pass with no weakened assertions
+- [x] `docs/testing.md`
+- [x] `pnpm typecheck` + `test` + `build` green
+- [x] Commit
 
 ## Success Criteria
 - `pnpm test` exits 0 with every matrix case implemented.
