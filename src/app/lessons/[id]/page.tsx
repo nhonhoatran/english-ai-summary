@@ -12,6 +12,7 @@ import { TabDialogue } from "@/components/lesson/tab-dialogue";
 import { TabGrammar } from "@/components/lesson/tab-grammar";
 import { TabQuiz } from "@/components/lesson/tab-quiz";
 import { TabVocabulary } from "@/components/lesson/tab-vocabulary";
+import { TabWritingPractice } from "@/components/lesson/tab-writing-practice";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { DeleteLessonButton } from "@/components/lesson/delete-lesson-button";
 
@@ -30,6 +31,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
       dialogueLines: { orderBy: { orderIndex: "asc" } },
       grammarPoints: { orderBy: { orderIndex: "asc" } },
       quizQuestions: { orderBy: { orderIndex: "asc" } },
+      writingPrompts: { orderBy: { orderIndex: "asc" } },
       vocabItems: {
         orderBy: { orderIndex: "asc" },
         include: {
@@ -54,6 +56,12 @@ export default async function LessonPage({ params }: LessonPageProps) {
     meaning: item.meaning,
     example: item.example,
     flashcard: item.flashcards[0] ? { id: item.flashcards[0].id } : null,
+  }));
+
+  const writingPromptsForTab = lesson.writingPrompts.map((wp) => ({
+    id: wp.id,
+    orderIndex: wp.orderIndex,
+    viMeaning: wp.viMeaning,
   }));
 
   return (
@@ -94,7 +102,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
             errorMessage={lesson.errorMessage}
           />
         ) : (
-          /* Main Interactive Player & 6 Tabs */
+          /* Main Interactive Player & 7 Tabs */
           <LessonPlayerProvider videoId={lesson.videoId}>
             <LessonTabs
               summaryTab={
@@ -119,6 +127,12 @@ export default async function LessonPage({ params }: LessonPageProps) {
               }
               quizTab={<TabQuiz questions={lesson.quizQuestions} />}
               vocabTab={<TabVocabulary items={vocabItemsForTab} />}
+              writingTab={
+                <TabWritingPractice
+                  prompts={writingPromptsForTab}
+                  lessonId={lesson.id}
+                />
+              }
             />
           </LessonPlayerProvider>
         )}

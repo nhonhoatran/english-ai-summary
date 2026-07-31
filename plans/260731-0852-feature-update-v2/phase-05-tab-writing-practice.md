@@ -1,6 +1,6 @@
 # Phase 05 — Tab "Viết lại câu" + Gemini Semantic Check API
 
-**Effort:** 4h | **Priority:** P2 | **Status:** pending  
+**Effort:** 4h | **Priority:** P2 | **Status:** completed  
 **Depends on:** Phase 02 (`writingPrompts` in DB), Phase 01 (`WritingPrompt` model)  
 **Blocks:** Phase 07
 
@@ -215,14 +215,14 @@ Pass `writingTab` to `LessonTabs`.
 
 ## Verification checklist
 
-- [ ] `/api/check-writing` returns 401 if not authenticated
-- [ ] `enAnswer` is NEVER rendered in browser DOM (inspect element check)
-- [ ] Correct answer gets `isCorrect: true`
-- [ ] Clearly wrong answer gets `isCorrect: false` with suggestion
-- [ ] Progress counter advances correctly
-- [ ] Completion screen shows after last prompt
-- [ ] Mobile layout works (textarea full-width, buttons accessible)
-- [ ] `npx tsc --noEmit` passes
+- [x] `/api/check-writing` returns 401 if not authenticated
+- [x] `enAnswer` is NEVER rendered in browser DOM (inspect element check)
+- [x] Correct answer gets `isCorrect: true`
+- [x] Clearly wrong answer gets `isCorrect: false` with suggestion
+- [x] Progress counter advances correctly
+- [x] Completion screen shows after last prompt
+- [x] Mobile layout works (textarea full-width, buttons accessible)
+- [x] `npx tsc --noEmit` passes
 
 ---
 

@@ -3,9 +3,9 @@
 
 import { useState, useEffect, ReactNode } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { FileText, BookOpen, HelpCircle, BookMarked, MessageSquare, Brain } from "lucide-react";
+import { FileText, BookOpen, HelpCircle, BookMarked, MessageSquare, Brain, PenLine } from "lucide-react";
 
-const VALID_TABS = ["summary", "script", "dialogue", "grammar", "quiz", "vocab"] as const;
+const VALID_TABS = ["summary", "script", "dialogue", "grammar", "quiz", "vocab", "writing"] as const;
 type TabValue = (typeof VALID_TABS)[number];
 
 interface LessonTabsProps {
@@ -15,6 +15,7 @@ interface LessonTabsProps {
   grammarTab: ReactNode;
   quizTab: ReactNode;
   vocabTab: ReactNode;
+  writingTab: ReactNode;
 }
 
 export function LessonTabs({
@@ -24,6 +25,7 @@ export function LessonTabs({
   grammarTab,
   quizTab,
   vocabTab,
+  writingTab,
 }: LessonTabsProps) {
   const [activeTab, setActiveTab] = useState<TabValue>("summary");
 
@@ -97,6 +99,14 @@ export function LessonTabs({
           <BookMarked className="w-4 h-4" />
           <span>Vocabulary</span>
         </TabsTrigger>
+
+        <TabsTrigger
+          value="writing"
+          className="flex-1 sm:flex-none py-2.5 px-4 rounded-lg text-zinc-400 data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-all text-sm font-medium gap-2"
+        >
+          <PenLine className="w-4 h-4 text-emerald-400" />
+          <span>Practice</span>
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="summary" className="mt-4 focus-visible:outline-none">
@@ -116,6 +126,9 @@ export function LessonTabs({
       </TabsContent>
       <TabsContent value="vocab" className="mt-4 focus-visible:outline-none">
         {vocabTab}
+      </TabsContent>
+      <TabsContent value="writing" className="mt-4 focus-visible:outline-none">
+        {writingTab}
       </TabsContent>
     </Tabs>
   );
