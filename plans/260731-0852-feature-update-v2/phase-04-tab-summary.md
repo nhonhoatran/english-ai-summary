@@ -1,6 +1,6 @@
 # Phase 04 — Tab Summary UI
 
-**Effort:** 1h | **Priority:** P2 | **Status:** pending  
+**Effort:** 1h | **Priority:** P2 | **Status:** completed  
 **Depends on:** Phase 02 (`summary` field in DB + ingest pipeline)  
 **Blocks:** Phase 07
 
@@ -133,12 +133,12 @@ Pass `summaryTab` to `LessonTabs`:
 
 ## Verification checklist
 
-- [ ] New `TabSummary` component renders correctly for a lesson with `summary` field
-- [ ] Tab appears first in the tab list
-- [ ] Hash routing works: `#summary` sets active tab
-- [ ] Graceful empty state when `summary` is null (older lessons)
-- [ ] `npx tsc --noEmit` passes
-- [ ] File size: `tab-summary.tsx` < 80 lines
+- [x] New `TabSummary` component renders correctly for a lesson with `summary` field
+- [x] Tab appears first in the tab list
+- [x] Hash routing works: `#summary` sets active tab
+- [x] Graceful empty state when `summary` is null (older lessons)
+- [x] `npx tsc --noEmit` passes
+- [x] File size: `tab-summary.tsx` < 80 lines (37 lines)
 
 ---
 
