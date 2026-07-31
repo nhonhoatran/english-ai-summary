@@ -10,6 +10,7 @@ import { SlidersHorizontal, ChevronDown, ChevronUp } from "lucide-react";
 
 export function AddLessonForm() {
   const [url, setUrl] = useState("");
+  const [targetLanguage, setTargetLanguage] = useState<"english" | "chinese">("english");
   const [quizCount, setQuizCount] = useState<number>(5);
   const [vocabCount, setVocabCount] = useState<number>(10);
   const [grammarCount, setGrammarCount] = useState<number>(4);
@@ -37,6 +38,7 @@ export function AddLessonForm() {
           vocabCount,
           grammarCount,
           dialogueCount,
+          targetLanguage,
         });
 
         if (!res.success) {
@@ -57,6 +59,25 @@ export function AddLessonForm() {
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
       <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-zinc-400">Target Language:</span>
+          {(["english", "chinese"] as const).map((lang) => (
+            <button
+              key={lang}
+              type="button"
+              onClick={() => setTargetLanguage(lang)}
+              disabled={isPending}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                targetLanguage === lang
+                  ? "bg-blue-600 text-white shadow-sm font-semibold"
+                  : "bg-zinc-800/80 text-zinc-400 hover:text-white hover:bg-zinc-800"
+              }`}
+            >
+              {lang === "english" ? "🇺🇸 English" : "🇨🇳 Chinese"}
+            </button>
+          ))}
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-3">
           <Input
             type="text"

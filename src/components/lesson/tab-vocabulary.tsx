@@ -18,9 +18,10 @@ interface VocabItemData {
 
 interface TabVocabularyProps {
   items: VocabItemData[];
+  targetLanguage?: "english" | "chinese";
 }
 
-export function TabVocabulary({ items }: TabVocabularyProps) {
+export function TabVocabulary({ items, targetLanguage = "english" }: TabVocabularyProps) {
   const [savedIds, setSavedIds] = useState<Set<string>>(() => {
     const initial = new Set<string>();
     items.forEach((item) => {
@@ -77,7 +78,10 @@ export function TabVocabulary({ items }: TabVocabularyProps) {
                   {item.term}
                 </h4>
                 {item.ipa && (
-                  <span className="text-sm text-zinc-400 font-mono bg-zinc-950/80 px-2 py-0.5 rounded border border-zinc-800/80">
+                  <span
+                    className="text-sm text-zinc-400 font-mono bg-zinc-950/80 px-2 py-0.5 rounded border border-zinc-800/80"
+                    title={targetLanguage === "chinese" ? "Pinyin" : "IPA"}
+                  >
                     {item.ipa}
                   </span>
                 )}

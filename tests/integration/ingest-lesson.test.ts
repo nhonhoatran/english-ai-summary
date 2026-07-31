@@ -123,4 +123,19 @@ describe("ingestLesson integration", () => {
     const count = await db.lesson.count();
     expect(count).toBe(0);
   });
+
+  it("persists targetLanguage='chinese' and requests zh-Hans captions", async () => {
+    vi.mocked(fetchYoutubeCaptions).mockResolvedValue(sampleCaptionSegmentsFixture);
+
+    const rawUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    const res = await ingestLesson(rawUrl, testUserId, { targetLanguage: "chinese" });
+
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+
+    expect(fetchYoutubeCaptions).toHaveBeenCalledWith("dQw4w9WgXcQ", "zh-Hans");
+
+    const lesson = await db.lesson.findUnique({ where: { id: res.lessonId } });
+    expect(lesson?.targetLanguage).toBe("chinese");
+  });
 });

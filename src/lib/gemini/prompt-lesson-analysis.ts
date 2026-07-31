@@ -112,11 +112,11 @@ Write in plain English, friendly tone.
 
 === 7. WRITING PROMPTS ===
 Create exactly ${writingPromptCount} sentence-writing exercises based on the transcript content.
-Each exercise gives the learner a Vietnamese meaning, and the learner must write the English sentence.
+Each exercise gives the learner a Vietnamese meaning, and the learner must write the ${langLabel} sentence.
 
 For each:
   - viMeaning: the Vietnamese translation of the sentence (plain, natural Vietnamese)
-  - enAnswer: the reference English sentence (short, natural, derivable from the transcript context)
+  - enAnswer: the reference ${langLabel} sentence (short, natural, derivable from the transcript context)
 
 Rules:
 - Sentences should be SHORT (max 10 words) — learnable sentences, not paragraphs

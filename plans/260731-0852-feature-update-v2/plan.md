@@ -46,7 +46,7 @@ Exception duy nhat: Tab Viet lai cau co Gemini semantic check moi lan user submi
 | 03 | IPA Enrichment (Dictionary API) | P1 | 1.5h | completed | 02 |
 | 04 | Tab Summary UI | P2 | 1h | completed | 02 |
 | 05 | Tab Viet lai cau + Gemini check API | P2 | 4h | completed | 02 |
-| 06 | Multi-language: Add-form + Captions + Prompts | P1 | 5h | pending | 02 |
+| 06 | Multi-language: Add-form + Captions + Prompts | P1 | 5h | completed | 02 |
 | 07 | Full UI/UX Redesign | P2 | 10h | pending | 01-06 |
 
 ## Key files affected

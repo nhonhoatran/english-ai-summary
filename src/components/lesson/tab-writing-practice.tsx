@@ -22,6 +22,7 @@ export interface WritingPromptClientData {
 interface TabWritingPracticeProps {
   prompts: WritingPromptClientData[];
   lessonId: string;
+  targetLanguage?: "english" | "chinese";
 }
 
 type CheckResult = {
@@ -37,7 +38,7 @@ type CheckState =
   | { status: "result"; result: CheckResult }
   | { status: "error"; message: string };
 
-export function TabWritingPractice({ prompts }: TabWritingPracticeProps) {
+export function TabWritingPractice({ prompts, targetLanguage = "english" }: TabWritingPracticeProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState("");
   const [checkState, setCheckState] = useState<CheckState>({ status: "idle" });
@@ -177,7 +178,7 @@ export function TabWritingPractice({ prompts }: TabWritingPracticeProps) {
         <div className="space-y-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5" />
-            Translate to English
+            {targetLanguage === "chinese" ? "Translate to Chinese" : "Translate to English"}
           </span>
           <p className="text-lg sm:text-xl font-medium text-white leading-relaxed bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/80">
             {currentPrompt.viMeaning}
@@ -190,7 +191,11 @@ export function TabWritingPractice({ prompts }: TabWritingPracticeProps) {
             value={userAnswer}
             onChange={(e) => setUserAnswer(e.target.value)}
             disabled={checkState.status === "checking" || checkState.status === "result"}
-            placeholder="Type your English translation here..."
+            placeholder={
+              targetLanguage === "chinese"
+                ? "Type your Chinese translation here..."
+                : "Type your English translation here..."
+            }
             rows={3}
             className="w-full p-4 rounded-xl bg-zinc-950 border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-base disabled:opacity-60 resize-none transition-all"
           />

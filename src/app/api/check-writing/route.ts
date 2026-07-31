@@ -30,10 +30,12 @@ export async function POST(req: NextRequest) {
 
     let referenceAnswer = parsed.data.referenceAnswer;
     let viMeaning = parsed.data.viMeaning;
+    let targetLanguage = "english";
 
     if (parsed.data.promptId) {
       const prompt = await db.writingPrompt.findFirst({
         where: { id: parsed.data.promptId, lesson: { userId: session.userId } },
+        include: { lesson: { select: { targetLanguage: true } } },
       });
 
       if (!prompt) {
@@ -42,6 +44,7 @@ export async function POST(req: NextRequest) {
 
       referenceAnswer = prompt.enAnswer;
       viMeaning = prompt.viMeaning;
+      targetLanguage = prompt.lesson.targetLanguage;
     }
 
     if (!referenceAnswer || !viMeaning) {
@@ -51,7 +54,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const promptText = buildCheckPrompt(viMeaning, referenceAnswer, parsed.data.userAnswer);
+    const promptText = buildCheckPrompt(
+      viMeaning,
+      referenceAnswer,
+      parsed.data.userAnswer,
+      targetLanguage
+    );
 
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
@@ -91,20 +99,22 @@ export async function POST(req: NextRequest) {
 function buildCheckPrompt(
   viMeaning: string,
   referenceAnswer: string,
-  userAnswer: string
+  userAnswer: string,
+  targetLanguage: string = "english"
 ): string {
-  return `You are an English language teacher evaluating a student's sentence writing exercise.
+  const langLabel = targetLanguage === "chinese" ? "Chinese (Mandarin)" : "English";
+  return `You are a ${langLabel} language teacher evaluating a student's sentence writing exercise.
 
 Vietnamese meaning shown to student: "${viMeaning}"
 Reference correct answer: "${referenceAnswer}"
 Student's answer: "${userAnswer}"
 
 Evaluate the student's answer:
-- isCorrect: true if the student's answer conveys the same meaning correctly (allow minor variations, different word choices that preserve meaning, contractions)
+- isCorrect: true if the student's answer conveys the same meaning correctly (allow minor variations, different word choices that preserve meaning, contractions or equivalent phrasing)
 - score: 0-100 (100 = perfect, 70+ = acceptable, below 70 = needs improvement)
 - feedback: one encouraging sentence explaining the result in Vietnamese or English
-- suggestion: only if isCorrect is false — provide the correct or improved version
+- suggestion: only if isCorrect is false — provide the correct or improved version in ${langLabel}
 
-Be lenient with: contractions, minor punctuation, British/American spelling differences.
-Be strict with: wrong vocabulary, wrong tense, completely different meaning.`;
+Be lenient with: minor punctuation, spacing differences, Pinyin vs characters if applicable.
+Be strict with: wrong vocabulary, wrong grammar/tense, completely different meaning.`;
 }

@@ -126,11 +126,17 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 />
               }
               quizTab={<TabQuiz questions={lesson.quizQuestions} />}
-              vocabTab={<TabVocabulary items={vocabItemsForTab} />}
+              vocabTab={
+                <TabVocabulary
+                  items={vocabItemsForTab}
+                  targetLanguage={lesson.targetLanguage}
+                />
+              }
               writingTab={
                 <TabWritingPractice
                   prompts={writingPromptsForTab}
                   lessonId={lesson.id}
+                  targetLanguage={lesson.targetLanguage}
                 />
               }
             />

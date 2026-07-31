@@ -2,10 +2,16 @@ import { getSubtitles } from "youtube-caption-extractor";
 import { TranscriptSegment } from "../gemini/lesson-schemas";
 
 export async function fetchYoutubeCaptions(
-  videoId: string
+  videoId: string,
+  lang?: string
 ): Promise<TranscriptSegment[] | null> {
   try {
-    let subtitles = await getSubtitles({ videoID: videoId, lang: "en" }).catch(() => null);
+    const primaryLang = lang ?? "en";
+    let subtitles = await getSubtitles({ videoID: videoId, lang: primaryLang }).catch(() => null);
+
+    if ((!subtitles || subtitles.length === 0) && primaryLang === "zh-Hans") {
+      subtitles = await getSubtitles({ videoID: videoId, lang: "zh-Hant" }).catch(() => null);
+    }
 
     if (!subtitles || subtitles.length === 0) {
       subtitles = await getSubtitles({ videoID: videoId }).catch(() => null);
@@ -13,7 +19,7 @@ export async function fetchYoutubeCaptions(
 
     if (!subtitles || subtitles.length === 0) {
       console.log(
-        `[fetchYoutubeCaptions] No caption segments returned for videoId=${videoId}`
+        `[fetchYoutubeCaptions] No caption segments returned for videoId=${videoId} (lang=${primaryLang})`
       );
       return null;
     }

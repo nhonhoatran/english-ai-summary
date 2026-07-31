@@ -81,6 +81,7 @@ export async function ingestLesson(
         videoUrl: canonicalUrl,
         title: "Processing lesson...",
         transcriptSource: "youtube-captions",
+        targetLanguage: options?.targetLanguage ?? "english",
         status: "GENERATING",
       },
     });
@@ -89,11 +90,12 @@ export async function ingestLesson(
 
   try {
     // 3. Attempt YouTube caption fetch with Gemini fallback
-    const captions = await fetchYoutubeCaptions(videoId);
+    const captionLang = options?.targetLanguage === "chinese" ? "zh-Hans" : "en";
+    const captions = await fetchYoutubeCaptions(videoId, captionLang);
     const transcriptSource = captions ? "youtube-captions" : "gemini";
 
     console.log(
-      `[ingestLesson] Generating lesson for videoId=${videoId} using source=${transcriptSource}`
+      `[ingestLesson] Generating lesson for videoId=${videoId} using source=${transcriptSource} lang=${captionLang}`
     );
 
     const generated: GeneratedLesson = await generateLesson(
@@ -107,6 +109,8 @@ export async function ingestLesson(
     if ((options?.targetLanguage ?? "english") === "english") {
       enrichedVocabItems = await enrichVocabWithIpa(generated.vocabItems);
       console.log(`[ingestLesson] IPA enrichment complete for ${enrichedVocabItems.length} vocab items`);
+    } else {
+      console.log(`[ingestLesson] Skipping Dictionary API IPA enrichment for targetLanguage=${options?.targetLanguage} (Pinyin provided by prompt)`);
     }
 
     // 4. Atomic transaction persistence

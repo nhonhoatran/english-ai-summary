@@ -1,6 +1,6 @@
 # Phase 06 — Multi-language: English + Chinese
 
-**Effort:** 5h | **Priority:** P1 | **Status:** pending  
+**Effort:** 5h | **Priority:** P1 | **Status:** completed  
 **Depends on:** Phase 02 (targetLanguage in options + prompts)  
 **Blocks:** Phase 07
 
@@ -179,15 +179,15 @@ Pass `targetLanguage` down to tabs that need it:
 
 ## Verification checklist
 
-- [ ] Language selector UI renders and toggles correctly
-- [ ] English lesson flow unchanged (regression test)
-- [ ] Chinese lesson: `targetLanguage = "chinese"` saved to DB
-- [ ] Chinese captions fetch attempted with `zh-Hans` lang
-- [ ] Chinese vocab items have Pinyin in `ipa` field (not English IPA)
-- [ ] Pinyin NOT overwritten by Dictionary API (skip guard works)
-- [ ] `tab-vocabulary.tsx` shows Pinyin label correctly for Chinese lessons
-- [ ] Writing practice tab shows "Write in Chinese" for Chinese lessons
-- [ ] `npx tsc --noEmit` passes
+- [x] Language selector UI renders and toggles correctly
+- [x] English lesson flow unchanged (regression test)
+- [x] Chinese lesson: `targetLanguage = "chinese"` saved to DB
+- [x] Chinese captions fetch attempted with `zh-Hans` lang
+- [x] Chinese vocab items have Pinyin in `ipa` field (not English IPA)
+- [x] Pinyin NOT overwritten by Dictionary API (skip guard works)
+- [x] `tab-vocabulary.tsx` shows Pinyin label correctly for Chinese lessons
+- [x] Writing practice tab shows "Write in Chinese" for Chinese lessons
+- [x] `npx tsc --noEmit` passes
 
 ---
 
