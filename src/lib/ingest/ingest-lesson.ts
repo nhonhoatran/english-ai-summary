@@ -5,6 +5,7 @@ import { parseYoutubeUrl } from "./parse-youtube-url";
 import { fetchYoutubeCaptions } from "./fetch-youtube-captions";
 import { generateLesson, GeneratedLesson } from "../gemini/generate-lesson";
 import { LessonAnalysisOptions } from "../gemini/prompt-lesson-analysis";
+import { enrichVocabWithIpa } from "./enrich-vocab-ipa";
 
 export type IngestResult =
   | { ok: true; lessonId: string; reused: boolean }
@@ -102,6 +103,12 @@ export async function ingestLesson(
       options
     );
 
+    let enrichedVocabItems = generated.vocabItems;
+    if ((options?.targetLanguage ?? "english") === "english") {
+      enrichedVocabItems = await enrichVocabWithIpa(generated.vocabItems);
+      console.log(`[ingestLesson] IPA enrichment complete for ${enrichedVocabItems.length} vocab items`);
+    }
+
     // 4. Atomic transaction persistence
     await db.$transaction(async (tx) => {
       await tx.transcriptSegment.deleteMany({ where: { lessonId } });
@@ -153,7 +160,7 @@ export async function ingestLesson(
             })),
           },
           vocabItems: {
-            create: generated.vocabItems.map((v, idx) => ({
+            create: enrichedVocabItems.map((v, idx) => ({
               orderIndex: idx + 1,
               term: v.term,
               meaning: v.meaning,

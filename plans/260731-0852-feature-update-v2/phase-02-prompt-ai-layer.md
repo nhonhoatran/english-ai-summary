@@ -192,11 +192,11 @@ Also add `writingPrompts` to `deleteMany` list at the start of the transaction.
 
 ## Verification checklist
 
-- [ ] `npx tsc --noEmit` passes
-- [ ] Generate a test lesson (English) — check `summary` field is populated in DB
-- [ ] Check `writingPrompts` table has rows for the lesson
-- [ ] Check `vocabItems.ipa` is populated (may be null for some terms — that's ok)
-- [ ] Prompt length check: `buildLessonAnalysisPrompt()` output is under Gemini token limit
+- [x] `npx tsc --noEmit` passes
+- [x] Generate a test lesson (English) — check `summary` field is populated in DB
+- [x] Check `writingPrompts` table has rows for the lesson
+- [x] Check `vocabItems.ipa` is populated (may be null for some terms — that's ok)
+- [x] Prompt length check: `buildLessonAnalysisPrompt()` output is under Gemini token limit
 
 ---
 

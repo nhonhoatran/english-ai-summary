@@ -1,6 +1,6 @@
 # Phase 03 — IPA Enrichment (Dictionary API Fallback)
 
-**Effort:** 1.5h | **Priority:** P1 | **Status:** pending  
+**Effort:** 1.5h | **Priority:** P1 | **Status:** completed  
 **Depends on:** Phase 02 (vocabItems.ipa field exists in DB)  
 **Blocks:** Phase 07 (vocabulary display)
 
@@ -169,12 +169,12 @@ Expected: phrasal verbs may return 404 (OK — null IPA fallback). Single words 
 
 ## Verification checklist
 
-- [ ] Pre-condition test passes (curl tests run, behavior confirmed)
-- [ ] `enrich-vocab-ipa.ts` < 80 lines
-- [ ] `enrichVocabWithIpa` does NOT throw on 404 or network error
-- [ ] Generate 1 English lesson → check `vocabItems` in DB: some have `ipa`, some null
-- [ ] UI shows IPA in gray mono font next to term
-- [ ] `npx tsc --noEmit` passes
+- [x] Pre-condition test passes (curl tests run, behavior confirmed)
+- [x] `enrich-vocab-ipa.ts` < 80 lines
+- [x] `enrichVocabWithIpa` does NOT throw on 404 or network error
+- [x] Generate 1 English lesson → check `vocabItems` in DB: some have `ipa`, some null
+- [x] UI shows IPA in gray mono font next to term
+- [x] `npx tsc --noEmit` passes
 
 ---
 

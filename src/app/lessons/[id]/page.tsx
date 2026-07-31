@@ -49,6 +49,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
     id: item.id,
     orderIndex: item.orderIndex,
     term: item.term,
+    ipa: item.ipa,
     meaning: item.meaning,
     example: item.example,
     flashcard: item.flashcards[0] ? { id: item.flashcards[0].id } : null,

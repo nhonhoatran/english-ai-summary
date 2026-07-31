@@ -10,6 +10,7 @@ interface VocabItemData {
   id: string;
   orderIndex: number;
   term: string;
+  ipa?: string | null;
   meaning: string;
   example: string;
   flashcard: { id: string } | null;
@@ -71,10 +72,15 @@ export function TabVocabulary({ items }: TabVocabularyProps) {
             className="p-5 rounded-xl bg-zinc-900/70 border border-zinc-800/80 space-y-3 flex flex-col sm:flex-row sm:items-start justify-between gap-4"
           >
             <div className="space-y-2 flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="text-lg font-bold text-white tracking-wide">
                   {item.term}
                 </h4>
+                {item.ipa && (
+                  <span className="text-sm text-zinc-400 font-mono bg-zinc-950/80 px-2 py-0.5 rounded border border-zinc-800/80">
+                    {item.ipa}
+                  </span>
+                )}
               </div>
               <p className="text-sm text-zinc-300 font-medium leading-relaxed">
                 {item.meaning}
