@@ -6,6 +6,7 @@ import { CatState } from "@prisma/client";
 import { CatMood } from "@/lib/cat/compute-cat-mood";
 import { CatSprite } from "./cat-sprite";
 import { CatGameModal } from "./cat-game-modal";
+import { playCatPop } from "@/lib/cat/cat-audio";
 
 interface CatApiResponse {
   catState: CatState;
@@ -15,12 +16,12 @@ interface CatApiResponse {
 }
 
 const MOOD_BADGES: Record<CatMood, { label: string; color: string }> = {
-  happy: { label: "Vui vẻ", color: "bg-emerald-500 text-white" },
-  playing: { label: "Đang chơi", color: "bg-indigo-500 text-white" },
-  hungry: { label: "Đang đói!", color: "bg-amber-500 text-white animate-pulse" },
-  dirty: { label: "Cần tắm!", color: "bg-sky-500 text-white" },
-  sleeping: { label: "Zzz...", color: "bg-slate-600 text-white" },
-  sad: { label: "Đang buồn", color: "bg-rose-500 text-white animate-pulse" },
+  happy: { label: "Vui vẻ 💕", color: "bg-emerald-500 text-white shadow-emerald-200" },
+  playing: { label: "Đang chơi 🧶", color: "bg-indigo-500 text-white shadow-indigo-200" },
+  hungry: { label: "Đang đói! 🐟", color: "bg-amber-500 text-white animate-pulse shadow-amber-200" },
+  dirty: { label: "Cần tắm! 🧼", color: "bg-sky-500 text-white shadow-sky-200" },
+  sleeping: { label: "Zzz... 💤", color: "bg-slate-600 text-white shadow-slate-200" },
+  sad: { label: "Đang buồn 🥺", color: "bg-rose-500 text-white animate-pulse shadow-rose-200" },
 };
 
 export function CatWidget() {
@@ -47,7 +48,6 @@ export function CatWidget() {
         const data: CatApiResponse = await res.json();
         setCatData(data);
       } else {
-        // User not authenticated or error -> hide cat
         setCatData(null);
       }
     } catch (err) {
@@ -72,42 +72,50 @@ export function CatWidget() {
   const { catState, mood } = catData;
   const badge = MOOD_BADGES[mood];
 
+  const handleOpenModal = () => {
+    playCatPop();
+    setIsModalOpen(true);
+  };
+
   return (
     <>
       {/* Floating Cat Widget (Bottom Right) */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-center select-none group">
+      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-center select-none group animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Mood Badge / Tooltip */}
         <div
-          className={`mb-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-md transition-transform duration-200 group-hover:scale-110 ${badge.color}`}
+          className={`mb-1.5 px-3 py-0.5 rounded-full text-[11px] font-extrabold shadow-md transition-all duration-300 group-hover:scale-110 flex items-center gap-1 ${badge.color}`}
         >
-          {badge.label}
+          <span>{badge.label}</span>
         </div>
 
         {/* Floating Trigger Box */}
         <button
-          onClick={() => setIsModalOpen(true)}
-          className="relative bg-white/90 backdrop-blur-md p-2 rounded-2xl border-2 border-slate-200/80 shadow-lg hover:shadow-xl hover:border-amber-400 transition-all duration-300 hover:scale-105 active:scale-95 flex flex-col items-center justify-center cursor-pointer"
-          title="Bấm để mở Mini Game Nuôi Mèo Mochi"
+          onClick={handleOpenModal}
+          className="relative bg-white/95 backdrop-blur-md p-2.5 rounded-3xl border-2 border-amber-200/80 shadow-xl hover:shadow-2xl hover:border-amber-400 transition-all duration-300 hover:scale-105 active:scale-95 flex flex-col items-center justify-center cursor-pointer overflow-visible"
+          title="Bấm để tương tác & mở Mini Game Nuôi Mèo Mochi"
         >
-          <CatSprite mood={mood} size={70} />
+          <CatSprite mood={mood} size={76} interactive={true} />
 
           {/* Mini 3 Status Bars under Cat */}
           <div className="w-full flex gap-1 mt-1 px-1">
-            <div className="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
+            {/* Happiness */}
+            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-pink-100">
               <div
-                className="h-full bg-pink-500 rounded-full"
+                className="h-full bg-pink-500 rounded-full transition-all duration-500"
                 style={{ width: `${catState.happiness}%` }}
               />
             </div>
-            <div className="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
+            {/* Hunger */}
+            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-amber-100">
               <div
-                className="h-full bg-amber-500 rounded-full"
+                className="h-full bg-amber-500 rounded-full transition-all duration-500"
                 style={{ width: `${catState.hunger}%` }}
               />
             </div>
-            <div className="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
+            {/* Cleanliness */}
+            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-sky-100">
               <div
-                className="h-full bg-sky-500 rounded-full"
+                className="h-full bg-sky-500 rounded-full transition-all duration-500"
                 style={{ width: `${catState.cleanliness}%` }}
               />
             </div>

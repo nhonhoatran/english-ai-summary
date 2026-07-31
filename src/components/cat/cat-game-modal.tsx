@@ -3,7 +3,13 @@
 import React, { useState } from "react";
 import { CatState } from "@prisma/client";
 import { CatMood } from "@/lib/cat/compute-cat-mood";
-import { CatSprite } from "./cat-sprite";
+import { CatSprite, CatActionType } from "./cat-sprite";
+import {
+  playCatPop,
+  playCatMeow,
+  toggleCatMute,
+  isCatMuted,
+} from "@/lib/cat/cat-audio";
 
 interface CatGameModalProps {
   isOpen: boolean;
@@ -17,13 +23,37 @@ interface CatGameModalProps {
   onRefresh: () => void;
 }
 
-const SPEECH_BUBBLES: Record<CatMood, string> = {
-  happy: "Meow~ Mochi vui quá chừng! Anh học giỏi ghê nè! 💕",
-  playing: "Nhảy nhót thôi! Chơi với Mochi tiếp hông anh? 🧶",
-  hungry: "Bụng kêu rột rột rồi... Cho Mochi ăn xíu đi anh! 🍗",
-  dirty: "Hơi ngứa ngáy bẩn bẩn rồi... Tắm rửa cho Mochi nha! 🧼",
-  sleeping: "Khò khò... Mochi buồn ngủ quá zzz... 💤",
-  sad: "Mochi hơi buồn đó... Anh nhớ học bài đều nghen! 🥺",
+const SPEECH_BUBBLES: Record<CatMood, string[]> = {
+  happy: [
+    "Meow~ Mochi vui quá chừng! Anh học giỏi ghê nè! 💕",
+    "Thương anh yêu nhiều lắm luôn á! ✨",
+    "Ngoan ngoãn cùng anh học bài nào! 🐾",
+  ],
+  playing: [
+    "Nhảy nhót thôi! Chơi với Mochi tiếp hông anh? 🧶",
+    "Vèo vèo~ Mochi năng động quá trời nè! ⚡",
+    "Tóm lấy cuộn len nào! Hahaha! 🎪",
+  ],
+  hungry: [
+    "Bụng kêu rột rột rồi... Cho Mochi ăn xíu đi anh! 🍗",
+    "Đói lả người rồi nè anh ơi... 🐟",
+    "Cho Mochi xin miếng đồ ăn ngon lành đi ha! 😋",
+  ],
+  dirty: [
+    "Hơi ngứa ngáy bẩn bẩn rồi... Tắm rửa cho Mochi nha! 🧼",
+    "Xà bông thơm phức thích lắm luôn á anh! 🫧",
+    "Tắm rửa sạch sẽ rồi mình cùng học tiếp nghen! 💧",
+  ],
+  sleeping: [
+    "Khò khò... Mochi buồn ngủ quá zzz... 💤",
+    "Đừng phá giấc ngủ của Mochi nghen... 😴",
+    "Mơ thấy anh tặng cả đống cá ngừ nè... 🐟💤",
+  ],
+  sad: [
+    "Mochi hơi buồn đó... Anh nhớ học bài đều nghen! 🥺",
+    "Hông có ai chơi cùng Mochi hết á... 💔",
+    "Anh ơi, xoa đầu Mochi chút đi cho đỡ buồn... 🐾",
+  ],
 };
 
 const MOOD_NAMES: Record<CatMood, string> = {
@@ -42,16 +72,21 @@ export function CatGameModal({
   onRefresh,
 }: CatGameModalProps) {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [actionState, setActionState] = useState<CatActionType>(null);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [muted, setMuted] = useState(isCatMuted());
+  const [quoteIndex, setQuoteIndex] = useState(0);
 
   if (!isOpen || !catData) return null;
 
   const { catState, mood, pointsBalance } = catData;
 
-  const handleAction = async (actionPath: string, actionName: string) => {
+  const handleAction = async (actionPath: string, actionName: CatActionType) => {
+    playCatPop();
     try {
-      setLoadingAction(actionName);
+      setLoadingAction(actionPath);
+      setActionState(actionName);
       setFeedbackMsg(null);
       setErrorMsg(null);
 
@@ -74,52 +109,106 @@ export function CatGameModal({
     }
   };
 
+  const handleToggleSound = () => {
+    const isNowMuted = toggleCatMute();
+    setMuted(isNowMuted);
+    if (!isNowMuted) {
+      playCatMeow("happy");
+    }
+  };
+
+  const handleSpeechBubbleClick = () => {
+    playCatPop();
+    const quotes = SPEECH_BUBBLES[mood];
+    setQuoteIndex((prev) => (prev + 1) % quotes.length);
+  };
+
   const remainingPets = Math.max(0, 3 - (catState.petCount ?? 0));
+  const currentQuote = SPEECH_BUBBLES[mood][quoteIndex % SPEECH_BUBBLES[mood].length];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 p-6 flex flex-col items-center">
-        {/* Close Button */}
+        {/* Top Controls: Sound Mute & Close */}
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          <button
+            onClick={handleToggleSound}
+            className="text-slate-500 hover:text-slate-800 w-9 h-9 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors text-base"
+            title={muted ? "Bật âm thanh meow" : "Tắt âm thanh meow"}
+            aria-label="Toggle Sound"
+          >
+            {muted ? "🔇" : "🔊"}
+          </button>
+
+          <button
+            onClick={() => {
+              playCatPop();
+              onClose();
+            }}
+            className="text-slate-400 hover:text-slate-700 w-9 h-9 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors font-bold text-sm"
+            aria-label="Đóng"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Header Badges */}
+        <div className="text-center mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200 rounded-full text-xs font-semibold text-amber-900 shadow-sm">
+            <span>🐾 Mèo Mochi</span>
+            <span className="text-slate-300">•</span>
+            <span className="text-amber-700 font-bold">{MOOD_NAMES[mood]}</span>
+          </div>
+          <div className="mt-1.5 text-xs sm:text-sm text-slate-600 font-medium">
+            Điểm tích lũy: <span className="font-extrabold text-amber-600">{pointsBalance} pts</span>
+          </div>
+        </div>
+
+        {/* Interactive Speech Bubble */}
         <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors"
-          aria-label="Đóng"
+          onClick={handleSpeechBubbleClick}
+          className="relative bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm px-4 py-2.5 rounded-2xl rounded-bl-none shadow-lg max-w-[90%] text-center my-2 border border-slate-700 transition-transform active:scale-95 cursor-pointer group"
+          title="Bấm để Mochi trò chuyện nè anh!"
         >
-          ✕
+          <span>{currentQuote}</span>
+          <div className="absolute -bottom-2 left-4 w-3 h-3 bg-slate-900 group-hover:bg-slate-800 transform rotate-45 border-r border-b border-slate-700" />
         </button>
 
-        {/* Title & Points Header */}
-        <div className="text-center mb-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200 rounded-full text-xs font-semibold text-amber-800">
-            🐾 Mèo Mochi • <span className="text-slate-600">{MOOD_NAMES[mood]}</span>
+        {/* Interactive Stage Arena */}
+        <div className="my-2 p-5 bg-gradient-to-b from-amber-50/60 via-orange-50/40 to-amber-100/50 rounded-3xl w-full flex flex-col justify-center items-center border border-amber-200/80 shadow-inner relative overflow-hidden group">
+          {/* Background Room Details */}
+          <div className="absolute top-2 left-3 text-[10px] text-amber-800/40 font-medium tracking-wide">
+            🏠 Phòng của Mochi
           </div>
-          <div className="mt-2 text-sm text-slate-600 font-medium">
-            Điểm tích lũy: <span className="font-bold text-amber-600">{pointsBalance} pts</span>
+
+          <div className="py-2">
+            <CatSprite
+              mood={mood}
+              size={170}
+              actionState={actionState}
+              onActionComplete={() => setActionState(null)}
+              interactive={true}
+            />
           </div>
-        </div>
 
-        {/* Speech Bubble */}
-        <div className="relative bg-slate-800 text-white text-xs sm:text-sm px-4 py-2.5 rounded-2xl rounded-bl-none shadow-md max-w-[85%] text-center mb-4 border border-slate-700 animate-bounce">
-          {SPEECH_BUBBLES[mood]}
-          <div className="absolute -bottom-2 left-4 w-3 h-3 bg-slate-800 transform rotate-45" />
-        </div>
-
-        {/* Cat Visual Preview */}
-        <div className="my-2 p-4 bg-gradient-to-b from-amber-50/50 to-orange-50/30 rounded-2xl w-full flex justify-center items-center border border-amber-100/60">
-          <CatSprite mood={mood} size={180} />
+          {/* Interactive Hint */}
+          <div className="mt-1 text-[11px] font-semibold text-amber-800/70 bg-amber-200/50 px-3 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-1">
+            <span>👇</span>
+            <span>Bấm hoặc rê chuột lên mèo để vuốt ve nha anh!</span>
+          </div>
         </div>
 
         {/* Status Bars */}
-        <div className="w-full space-y-2.5 my-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+        <div className="w-full space-y-2.5 my-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-100 shadow-xs">
           {/* Happiness */}
           <div>
-            <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+            <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
               <span>❤️ Vui vẻ</span>
-              <span>{catState.happiness}%</span>
+              <span className="text-pink-600">{catState.happiness}%</span>
             </div>
-            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden p-0.5 shadow-inner">
               <div
-                className="h-full bg-gradient-to-r from-pink-400 to-rose-500 transition-all duration-500 rounded-full"
+                className="h-full bg-gradient-to-r from-pink-400 to-rose-500 transition-all duration-500 rounded-full shadow"
                 style={{ width: `${catState.happiness}%` }}
               />
             </div>
@@ -127,13 +216,13 @@ export function CatGameModal({
 
           {/* Hunger */}
           <div>
-            <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-              <span>🍗 Cơn đói</span>
-              <span>{catState.hunger}%</span>
+            <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
+              <span>🍗 Cơn đói (thấp là no)</span>
+              <span className="text-amber-600">{catState.hunger}%</span>
             </div>
-            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden p-0.5 shadow-inner">
               <div
-                className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-500 rounded-full"
+                className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-500 rounded-full shadow"
                 style={{ width: `${catState.hunger}%` }}
               />
             </div>
@@ -141,13 +230,13 @@ export function CatGameModal({
 
           {/* Cleanliness */}
           <div>
-            <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+            <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
               <span>🧼 Sạch sẽ</span>
-              <span>{catState.cleanliness}%</span>
+              <span className="text-sky-600">{catState.cleanliness}%</span>
             </div>
-            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden p-0.5 shadow-inner">
               <div
-                className="h-full bg-gradient-to-r from-sky-400 to-blue-500 transition-all duration-500 rounded-full"
+                className="h-full bg-gradient-to-r from-sky-400 to-blue-500 transition-all duration-500 rounded-full shadow"
                 style={{ width: `${catState.cleanliness}%` }}
               />
             </div>
@@ -156,50 +245,50 @@ export function CatGameModal({
 
         {/* Feedback / Error Toast */}
         {feedbackMsg && (
-          <div className="w-full text-center text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 py-2 px-3 rounded-xl mb-3 animate-in fade-in">
-            {feedbackMsg}
+          <div className="w-full text-center text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 py-2 px-3 rounded-xl mb-2 animate-in fade-in flex items-center justify-center gap-1.5">
+            <span>✅</span> <span>{feedbackMsg}</span>
           </div>
         )}
         {errorMsg && (
-          <div className="w-full text-center text-xs font-medium text-rose-700 bg-rose-50 border border-rose-200 py-2 px-3 rounded-xl mb-3 animate-in fade-in">
-            {errorMsg}
+          <div className="w-full text-center text-xs font-semibold text-rose-800 bg-rose-50 border border-rose-300 py-2 px-3 rounded-xl mb-2 animate-in fade-in flex items-center justify-center gap-1.5">
+            <span>⚠️</span> <span>{errorMsg}</span>
           </div>
         )}
 
         {/* Action Buttons Grid */}
-        <div className="grid grid-cols-2 gap-3 w-full">
+        <div className="grid grid-cols-2 gap-2.5 w-full">
           {/* Feed */}
           <button
             onClick={() => handleAction("feed", "feed")}
             disabled={loadingAction !== null || pointsBalance < 5}
-            className="flex flex-col items-center justify-center p-3 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed border border-amber-200 rounded-2xl transition-all shadow-sm active:scale-95"
+            className="flex flex-col items-center justify-center p-2.5 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed border border-amber-200/90 rounded-2xl transition-all shadow-xs hover:shadow-sm active:scale-95 cursor-pointer"
           >
-            <span className="text-xl">🍲</span>
-            <span className="text-xs font-bold text-slate-800 mt-1">Cho ăn</span>
-            <span className="text-[10px] text-amber-700 font-medium">-5 pts</span>
+            <span className="text-2xl">🍲</span>
+            <span className="text-xs font-bold text-slate-800 mt-0.5">Cho ăn</span>
+            <span className="text-[10px] text-amber-700 font-semibold">-5 pts</span>
           </button>
 
           {/* Bath */}
           <button
             onClick={() => handleAction("bath", "bath")}
             disabled={loadingAction !== null || pointsBalance < 10}
-            className="flex flex-col items-center justify-center p-3 bg-sky-50 hover:bg-sky-100 disabled:opacity-50 disabled:cursor-not-allowed border border-sky-200 rounded-2xl transition-all shadow-sm active:scale-95"
+            className="flex flex-col items-center justify-center p-2.5 bg-sky-50 hover:bg-sky-100 disabled:opacity-50 disabled:cursor-not-allowed border border-sky-200/90 rounded-2xl transition-all shadow-xs hover:shadow-sm active:scale-95 cursor-pointer"
           >
-            <span className="text-xl">🧼</span>
-            <span className="text-xs font-bold text-slate-800 mt-1">Tắm rửa</span>
-            <span className="text-[10px] text-sky-700 font-medium">-10 pts</span>
+            <span className="text-2xl">🧼</span>
+            <span className="text-xs font-bold text-slate-800 mt-0.5">Tắm rửa</span>
+            <span className="text-[10px] text-sky-700 font-semibold">-10 pts</span>
           </button>
 
           {/* Pet */}
           <button
             onClick={() => handleAction("pet", "pet")}
             disabled={loadingAction !== null || remainingPets <= 0}
-            className="flex flex-col items-center justify-center p-3 bg-pink-50 hover:bg-pink-100 disabled:opacity-50 disabled:cursor-not-allowed border border-pink-200 rounded-2xl transition-all shadow-sm active:scale-95"
+            className="flex flex-col items-center justify-center p-2.5 bg-pink-50 hover:bg-pink-100 disabled:opacity-50 disabled:cursor-not-allowed border border-pink-200/90 rounded-2xl transition-all shadow-xs hover:shadow-sm active:scale-95 cursor-pointer"
           >
-            <span className="text-xl">👋</span>
-            <span className="text-xs font-bold text-slate-800 mt-1">Vuốt ve</span>
-            <span className="text-[10px] text-pink-700 font-medium">
-              Free ({remainingPets}/3 lượt)
+            <span className="text-2xl">👋</span>
+            <span className="text-xs font-bold text-slate-800 mt-0.5">Vuốt ve</span>
+            <span className="text-[10px] text-pink-700 font-semibold">
+              Miễn phí ({remainingPets}/3)
             </span>
           </button>
 
@@ -207,11 +296,11 @@ export function CatGameModal({
           <button
             onClick={() => handleAction("play", "play")}
             disabled={loadingAction !== null || pointsBalance < 15}
-            className="flex flex-col items-center justify-center p-3 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed border border-indigo-200 rounded-2xl transition-all shadow-sm active:scale-95"
+            className="flex flex-col items-center justify-center p-2.5 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed border border-indigo-200/90 rounded-2xl transition-all shadow-xs hover:shadow-sm active:scale-95 cursor-pointer"
           >
-            <span className="text-xl">🧶</span>
-            <span className="text-xs font-bold text-slate-800 mt-1">Chơi đùa</span>
-            <span className="text-[10px] text-indigo-700 font-medium">-15 pts</span>
+            <span className="text-2xl">🧶</span>
+            <span className="text-xs font-bold text-slate-800 mt-0.5">Chơi đùa</span>
+            <span className="text-[10px] text-indigo-700 font-semibold">-15 pts</span>
           </button>
         </div>
       </div>
