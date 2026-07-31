@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
-import * as THREE from "three";
+import React, { useEffect, useRef, useState } from "react";
 import { CatMood } from "@/lib/cat/compute-cat-mood";
 
 interface CatSpriteProps {
@@ -11,348 +10,343 @@ interface CatSpriteProps {
 }
 
 export function CatSprite({ mood, size = 120 }: CatSpriteProps) {
-  const mountRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const moodRef = useRef<CatMood>(mood);
   moodRef.current = mood;
 
+  const [particles, setParticles] = useState<{ id: number; x: number; y: number; text: string }[]>([]);
+
   useEffect(() => {
-    const container = mountRef.current;
-    if (!container) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    // 1. Scene, Camera, WebGL Renderer
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-    camera.position.set(0, 1.2, 4.2);
-    camera.lookAt(0, 0.8, 0);
+    let reqId: number;
+    let time = 0;
+    let blinkTimer = 0;
+    let isBlinking = false;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setSize(size, size);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-    container.innerHTML = "";
-    container.appendChild(renderer.domElement);
-
-    // 2. Lights setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
-    scene.add(ambientLight);
-
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
-    dirLight.position.set(3, 5, 4);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 512;
-    dirLight.shadow.mapSize.height = 512;
-    scene.add(dirLight);
-
-    const fillLight = new THREE.PointLight(0x60a5fa, 0.8, 10);
-    fillLight.position.set(-3, 2, -2);
-    scene.add(fillLight);
-
-    // 3. Materials
-    const blackMat = new THREE.MeshStandardMaterial({
-      color: 0x18181b,
-      roughness: 0.4,
-      metalness: 0.1,
-    });
-
-    const whiteMat = new THREE.MeshStandardMaterial({
-      color: 0xf8fafc,
-      roughness: 0.3,
-      metalness: 0.05,
-    });
-
-    const pinkMat = new THREE.MeshStandardMaterial({
-      color: 0xf472b6,
-      roughness: 0.4,
-    });
-
-    const eyeMat = new THREE.MeshStandardMaterial({
-      color: 0x10b981,
-      roughness: 0.1,
-      metalness: 0.2,
-    });
-
-    const pupilMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
-    const shineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-
-    // 4. Cat Base 3D Group
-    const catGroup = new THREE.Group();
-    scene.add(catGroup);
-
-    // Shadow Plane
-    const shadowGeo = new THREE.PlaneGeometry(2.5, 2.5);
-    const shadowMat = new THREE.MeshBasicMaterial({
-      color: 0x000000,
-      transparent: true,
-      opacity: 0.18,
-      depthWrite: false,
-    });
-    const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-    shadowMesh.rotation.x = -Math.PI / 2;
-    shadowMesh.position.y = 0.01;
-    scene.add(shadowMesh);
-
-    // Body
-    const bodyGeo = new THREE.SphereGeometry(0.7, 32, 32);
-    bodyGeo.scale(0.85, 1, 0.8);
-    const bodyMesh = new THREE.Mesh(bodyGeo, blackMat);
-    bodyMesh.position.set(0, 0.65, 0);
-    catGroup.add(bodyMesh);
-
-    // White Chest Patch
-    const chestGeo = new THREE.SphereGeometry(0.55, 32, 32);
-    chestGeo.scale(0.7, 0.95, 0.5);
-    const chestMesh = new THREE.Mesh(chestGeo, whiteMat);
-    chestMesh.position.set(0, 0.65, 0.42);
-    catGroup.add(chestMesh);
-
-    // Paws
-    const pawGeo = new THREE.SphereGeometry(0.2, 16, 16);
-    pawGeo.scale(1, 0.6, 1.2);
-
-    const leftFrontPaw = new THREE.Mesh(pawGeo, whiteMat);
-    leftFrontPaw.position.set(-0.32, 0.12, 0.55);
-    catGroup.add(leftFrontPaw);
-
-    const rightFrontPaw = new THREE.Mesh(pawGeo, whiteMat);
-    rightFrontPaw.position.set(0.32, 0.12, 0.55);
-    catGroup.add(rightFrontPaw);
-
-    const leftBackPaw = new THREE.Mesh(pawGeo, whiteMat);
-    leftBackPaw.position.set(-0.48, 0.12, -0.1);
-    catGroup.add(leftBackPaw);
-
-    const rightBackPaw = new THREE.Mesh(pawGeo, whiteMat);
-    rightBackPaw.position.set(0.48, 0.12, -0.1);
-    catGroup.add(rightBackPaw);
-
-    // Head Group
-    const headGroup = new THREE.Group();
-    headGroup.position.set(0, 1.35, 0.1);
-    catGroup.add(headGroup);
-
-    // Head Base
-    const headGeo = new THREE.SphereGeometry(0.62, 32, 32);
-    headGeo.scale(1.05, 0.92, 0.95);
-    const headMesh = new THREE.Mesh(headGeo, blackMat);
-    headGroup.add(headMesh);
-
-    // White Muzzle
-    const muzzleGeo = new THREE.SphereGeometry(0.42, 24, 24);
-    muzzleGeo.scale(1.1, 0.75, 0.65);
-    const muzzleMesh = new THREE.Mesh(muzzleGeo, whiteMat);
-    muzzleMesh.position.set(0, -0.12, 0.36);
-    headGroup.add(muzzleMesh);
-
-    // Nose
-    const noseGeo = new THREE.ConeGeometry(0.06, 0.05, 4);
-    noseGeo.rotateX(Math.PI);
-    const noseMesh = new THREE.Mesh(noseGeo, pinkMat);
-    noseMesh.position.set(0, -0.05, 0.61);
-    headGroup.add(noseMesh);
-
-    // Ears
-    const earGeo = new THREE.ConeGeometry(0.22, 0.45, 16);
-
-    const leftEar = new THREE.Mesh(earGeo, blackMat);
-    leftEar.position.set(-0.35, 0.52, 0.05);
-    leftEar.rotation.set(-0.1, 0, 0.35);
-    headGroup.add(leftEar);
-
-    const leftInnerEar = new THREE.Mesh(earGeo, pinkMat);
-    leftInnerEar.scale.set(0.65, 0.65, 0.65);
-    leftInnerEar.position.set(-0.35, 0.52, 0.08);
-    leftInnerEar.rotation.set(-0.1, 0, 0.35);
-    headGroup.add(leftInnerEar);
-
-    const rightEar = new THREE.Mesh(earGeo, blackMat);
-    rightEar.position.set(0.35, 0.52, 0.05);
-    rightEar.rotation.set(-0.1, 0, -0.35);
-    headGroup.add(rightEar);
-
-    const rightInnerEar = new THREE.Mesh(earGeo, pinkMat);
-    rightInnerEar.scale.set(0.65, 0.65, 0.65);
-    rightInnerEar.position.set(0.35, 0.52, 0.08);
-    rightInnerEar.rotation.set(-0.1, 0, -0.35);
-    headGroup.add(rightInnerEar);
-
-    // Eyes Group
-    const eyesGroup = new THREE.Group();
-    headGroup.add(eyesGroup);
-
-    const eyeGeo = new THREE.SphereGeometry(0.14, 24, 24);
-
-    const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-    leftEye.position.set(-0.24, 0.08, 0.51);
-    eyesGroup.add(leftEye);
-
-    const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-    rightEye.position.set(0.24, 0.08, 0.51);
-    eyesGroup.add(rightEye);
-
-    // Pupils
-    const pupilGeo = new THREE.SphereGeometry(0.08, 16, 16);
-    pupilGeo.scale(0.5, 1, 0.5);
-
-    const leftPupil = new THREE.Mesh(pupilGeo, pupilMat);
-    leftPupil.position.set(-0.24, 0.08, 0.62);
-    eyesGroup.add(leftPupil);
-
-    const rightPupil = new THREE.Mesh(pupilGeo, pupilMat);
-    rightPupil.position.set(0.24, 0.08, 0.62);
-    eyesGroup.add(rightPupil);
-
-    // Eye Shine
-    const shineGeo = new THREE.SphereGeometry(0.03, 8, 8);
-    const leftShine = new THREE.Mesh(shineGeo, shineMat);
-    leftShine.position.set(-0.21, 0.12, 0.64);
-    eyesGroup.add(leftShine);
-
-    const rightShine = new THREE.Mesh(shineGeo, shineMat);
-    rightShine.position.set(0.27, 0.12, 0.64);
-    eyesGroup.add(rightShine);
-
-    // Segmented Tail
-    const tailGroup = new THREE.Group();
-    tailGroup.position.set(0, 0.35, -0.6);
-    catGroup.add(tailGroup);
-
-    const tailSegments: THREE.Mesh[] = [];
-    const numSegments = 6;
-    let prevSeg: THREE.Object3D = tailGroup;
-
-    for (let i = 0; i < numSegments; i++) {
-      const radius = 0.09 - i * 0.01;
-      const segGeo = new THREE.CylinderGeometry(radius, radius + 0.01, 0.25, 16);
-      const segMesh = new THREE.Mesh(segGeo, blackMat);
-      segMesh.position.set(0, 0.12, -0.1);
-      segMesh.rotation.x = 0.3;
-      prevSeg.add(segMesh);
-      tailSegments.push(segMesh);
-      prevSeg = segMesh;
-    }
-
-    const tipGeo = new THREE.SphereGeometry(0.05, 12, 12);
-    const tipMesh = new THREE.Mesh(tipGeo, whiteMat);
-    tipMesh.position.set(0, 0.15, 0);
-    prevSeg.add(tipMesh);
-
-    // Interactive Mouse Tracking
-    let targetMouseX = 0;
-    let targetMouseY = 0;
+    // Mouse tracking
+    let mouseX = 0;
+    let mouseY = 0;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const rect = container.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width - 0.5;
-      const y = (e.clientY - rect.top) / rect.height - 0.5;
-      targetMouseX = x * 2;
-      targetMouseY = -y * 2;
+      const rect = canvas.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      mouseX = Math.max(-1, Math.min(1, (e.clientX - cx) / (rect.width / 2)));
+      mouseY = Math.max(-1, Math.min(1, (e.clientY - cy) / (rect.height / 2)));
     };
 
     window.addEventListener("mousemove", handleMouseMove);
 
-    // Animation Loop
-    const clock = new THREE.Clock();
-    let reqId: number;
-    let blinkTimer = 0;
+    const render = () => {
+      reqId = requestAnimationFrame(render);
+      time += 0.03;
 
-    const animate = () => {
-      reqId = requestAnimationFrame(animate);
-
-      const elapsedTime = clock.getElapsedTime();
+      const width = size;
+      const height = size;
       const currentMood = moodRef.current;
 
-      // Mouse Head Tracking
-      headGroup.rotation.y += (targetMouseX * 0.4 - headGroup.rotation.y) * 0.1;
-      headGroup.rotation.x += (targetMouseY * 0.2 - headGroup.rotation.x) * 0.1;
-
-      // Real-time Tail Wave
-      tailSegments.forEach((seg, idx) => {
-        const waveSpeed = currentMood === "playing" ? 8 : currentMood === "happy" ? 5 : 2;
-        const waveAmp = currentMood === "playing" ? 0.25 : 0.12;
-        seg.rotation.z = Math.sin(elapsedTime * waveSpeed + idx * 0.4) * waveAmp;
-      });
-
-      // Blinking Logic
+      // Handle Blinking
       blinkTimer += 0.016;
       if (blinkTimer > 3.5) {
-        eyesGroup.scale.y = Math.max(0.05, Math.sin((blinkTimer - 3.5) * Math.PI * 10));
+        isBlinking = true;
         if (blinkTimer > 3.7) {
           blinkTimer = 0;
-          eyesGroup.scale.y = 1;
+          isBlinking = false;
         }
+      }
+
+      ctx.clearRect(0, 0, width, height);
+
+      const cx = width / 2;
+      const cy = height / 2;
+
+      // Mood-based motion offsets
+      let bounceY = Math.sin(time * 3) * 3;
+      let headTilt = mouseX * 0.15;
+      let tailWiggle = Math.sin(time * 4) * 0.25;
+
+      if (currentMood === "playing") {
+        bounceY = Math.abs(Math.sin(time * 6)) * -8;
+        tailWiggle = Math.sin(time * 8) * 0.4;
+      } else if (currentMood === "sleeping") {
+        bounceY = Math.sin(time * 1.5) * 1.5;
+        tailWiggle = Math.sin(time * 1.5) * 0.1;
+      } else if (currentMood === "happy") {
+        bounceY = Math.sin(time * 4) * 4;
+      }
+
+      ctx.save();
+      ctx.translate(cx, cy + bounceY + 6);
+
+      // 1. Soft Floor Shadow
+      ctx.beginPath();
+      ctx.ellipse(0, 42, 38, 8, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.12)";
+      ctx.fill();
+
+      // 2. Animated Tail
+      ctx.save();
+      ctx.translate(22, 18);
+      ctx.rotate(tailWiggle);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(15, -10, 25, -25, 20, -38);
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = "#18181b"; // Black tail
+      ctx.lineCap = "round";
+      ctx.stroke();
+
+      // White Tail Tip
+      ctx.beginPath();
+      ctx.arc(20, -38, 5, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.restore();
+
+      // 3. Body (Chubby Round Body - Tuxedo Black & White)
+      ctx.beginPath();
+      ctx.ellipse(0, 20, 32, 26, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#18181b"; // Black fur
+      ctx.fill();
+
+      // White Chest/Belly
+      ctx.beginPath();
+      ctx.ellipse(0, 22, 22, 20, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+
+      // Front Paws
+      ctx.beginPath();
+      ctx.ellipse(-14, 38, 8, 6, 0, 0, Math.PI * 2);
+      ctx.ellipse(14, 38, 8, 6, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.stroke();
+
+      // 4. Head Group (with mouse tilt)
+      ctx.save();
+      ctx.translate(mouseX * 4, mouseY * 3 - 10);
+      ctx.rotate(headTilt);
+
+      // Ears (Black Outer, Pink Inner)
+      // Left Ear
+      ctx.beginPath();
+      ctx.moveTo(-28, -12);
+      ctx.quadraticCurveTo(-38, -38, -18, -38);
+      ctx.quadraticCurveTo(-8, -26, -10, -12);
+      ctx.fillStyle = "#18181b";
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(-26, -14);
+      ctx.quadraticCurveTo(-33, -33, -19, -33);
+      ctx.quadraticCurveTo(-12, -24, -13, -14);
+      ctx.fillStyle = "#f472b6"; // Pink inner
+      ctx.fill();
+
+      // Right Ear
+      ctx.beginPath();
+      ctx.moveTo(28, -12);
+      ctx.quadraticCurveTo(38, -38, 18, -38);
+      ctx.quadraticCurveTo(8, -26, 10, -12);
+      ctx.fillStyle = "#18181b";
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(26, -14);
+      ctx.quadraticCurveTo(33, -33, 19, -33);
+      ctx.quadraticCurveTo(12, -24, 13, -14);
+      ctx.fillStyle = "#f472b6";
+      ctx.fill();
+
+      // Head Base (Black Patch top, White face)
+      ctx.beginPath();
+      ctx.ellipse(0, -6, 34, 28, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+
+      // Top Black Patch (Tuxedo pattern on forehead)
+      ctx.beginPath();
+      ctx.moveTo(-32, -18);
+      ctx.bezierCurveTo(-20, -36, 20, -36, 32, -18);
+      ctx.bezierCurveTo(20, -14, 0, -10, -32, -18);
+      ctx.fillStyle = "#18181b";
+      ctx.fill();
+
+      // 5. Rosy Cheeks (Cute Pink Blush)
+      ctx.beginPath();
+      ctx.ellipse(-20, 2, 7, 4, 0, 0, Math.PI * 2);
+      ctx.ellipse(20, 2, 7, 4, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(251, 113, 133, 0.4)";
+      ctx.fill();
+
+      // 6. Eyes (Kawaii Big Eyes with pupil & shine)
+      const eyeOffsetX = mouseX * 2;
+      const eyeOffsetY = mouseY * 2;
+
+      if (isBlinking || currentMood === "sleeping") {
+        // Closed eyes ^ ^
+        ctx.beginPath();
+        ctx.arc(-14, -4, 6, 0.1, Math.PI - 0.1);
+        ctx.arc(14, -4, 6, 0.1, Math.PI - 0.1);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#18181b";
+        ctx.stroke();
+      } else if (currentMood === "happy" || currentMood === "playing") {
+        // Anime Happy Eyes ^ ^
+        ctx.beginPath();
+        ctx.arc(-14, -2, 7, Math.PI + 0.2, -0.2);
+        ctx.moveTo(7, -2);
+        ctx.arc(14, -2, 7, Math.PI + 0.2, -0.2);
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = "#18181b";
+        ctx.lineCap = "round";
+        ctx.stroke();
+      } else if (currentMood === "hungry") {
+        // Puss in boots big shiny begging eyes
+        ctx.beginPath();
+        ctx.arc(-14 + eyeOffsetX, -4 + eyeOffsetY, 9, 0, Math.PI * 2);
+        ctx.arc(14 + eyeOffsetX, -4 + eyeOffsetY, 9, 0, Math.PI * 2);
+        ctx.fillStyle = "#0f172a";
+        ctx.fill();
+
+        // Big sparkle shine
+        ctx.beginPath();
+        ctx.arc(-16 + eyeOffsetX, -7 + eyeOffsetY, 3.5, 0, Math.PI * 2);
+        ctx.arc(12 + eyeOffsetX, -7 + eyeOffsetY, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(-12 + eyeOffsetX, -2 + eyeOffsetY, 2, 0, Math.PI * 2);
+        ctx.arc(16 + eyeOffsetX, -2 + eyeOffsetY, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+      } else if (currentMood === "sad") {
+        // Sad droopy eyes
+        ctx.beginPath();
+        ctx.arc(-14 + eyeOffsetX, -2 + eyeOffsetY, 7, 0, Math.PI * 2);
+        ctx.arc(14 + eyeOffsetX, -2 + eyeOffsetY, 7, 0, Math.PI * 2);
+        ctx.fillStyle = "#334155";
+        ctx.fill();
+
+        // Tear drop
+        ctx.beginPath();
+        ctx.arc(-22, 6, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#38bdf8";
+        ctx.fill();
       } else {
-        eyesGroup.scale.y = 1;
+        // Default Kawaii Eye (Big Black pupil + dual shine)
+        ctx.beginPath();
+        ctx.arc(-14 + eyeOffsetX, -4 + eyeOffsetY, 7.5, 0, Math.PI * 2);
+        ctx.arc(14 + eyeOffsetX, -4 + eyeOffsetY, 7.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#18181b";
+        ctx.fill();
+
+        // Sparkle 1
+        ctx.beginPath();
+        ctx.arc(-16 + eyeOffsetX, -6 + eyeOffsetY, 2.5, 0, Math.PI * 2);
+        ctx.arc(12 + eyeOffsetX, -6 + eyeOffsetY, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+
+        // Sparkle 2
+        ctx.beginPath();
+        ctx.arc(-12 + eyeOffsetX, -2 + eyeOffsetY, 1.5, 0, Math.PI * 2);
+        ctx.arc(16 + eyeOffsetX, -2 + eyeOffsetY, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
       }
 
-      // Reset base transformations
-      catGroup.position.set(0, 0, 0);
-      catGroup.rotation.set(0, 0, 0);
-      catGroup.scale.set(1, 1, 1);
-      leftEar.rotation.set(-0.1, 0, 0.35);
-      rightEar.rotation.set(-0.1, 0, -0.35);
+      // 7. Cute Nose & Mouth (ω shape)
+      ctx.beginPath();
+      ctx.arc(0, 3, 2, 0, Math.PI * 2);
+      ctx.fillStyle = "#fb7185"; // Pink nose
+      ctx.fill();
 
-      // Mood 3D Animations
-      switch (currentMood) {
-        case "happy":
-          catGroup.position.y = Math.sin(elapsedTime * 4) * 0.06;
-          headGroup.rotation.z = Math.sin(elapsedTime * 3) * 0.05;
-          leftEar.rotation.z = 0.35 + Math.sin(elapsedTime * 6) * 0.05;
-          rightEar.rotation.z = -0.35 - Math.sin(elapsedTime * 6) * 0.05;
-          break;
+      // Mouth ω
+      ctx.beginPath();
+      ctx.arc(-3, 6, 3, 0, Math.PI);
+      ctx.arc(3, 6, 3, 0, Math.PI);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#334155";
+      ctx.stroke();
 
-        case "playing":
-          catGroup.position.y = Math.abs(Math.sin(elapsedTime * 6)) * 0.22;
-          catGroup.rotation.z = Math.sin(elapsedTime * 5) * 0.1;
-          headGroup.rotation.z = Math.sin(elapsedTime * 8) * 0.1;
-          break;
+      // Whiskers
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.lineWidth = 1.5;
 
-        case "sleeping":
-          catGroup.position.y = -0.15;
-          catGroup.rotation.x = 0.2;
-          headGroup.position.set(0, 1.1, 0.2);
-          headGroup.rotation.x = 0.3;
-          eyesGroup.scale.y = 0.05;
-          catGroup.scale.y = 1 + Math.sin(elapsedTime * 2) * 0.03;
-          break;
+      // Left Whiskers
+      ctx.beginPath();
+      ctx.moveTo(-24, 2);
+      ctx.lineTo(-38, 0);
+      ctx.moveTo(-24, 6);
+      ctx.lineTo(-38, 8);
+      ctx.stroke();
 
-        case "hungry":
-          catGroup.position.y = Math.sin(elapsedTime * 3) * 0.03;
-          headGroup.rotation.x = -0.25;
-          leftPupil.scale.set(1.4, 1.4, 1.4);
-          rightPupil.scale.set(1.4, 1.4, 1.4);
-          break;
+      // Right Whiskers
+      ctx.beginPath();
+      ctx.moveTo(24, 2);
+      ctx.lineTo(38, 0);
+      ctx.moveTo(24, 6);
+      ctx.lineTo(38, 8);
+      ctx.stroke();
 
-        case "sad":
-          catGroup.position.y = -0.08;
-          headGroup.rotation.x = 0.25;
-          leftEar.rotation.z = 0.6;
-          rightEar.rotation.z = -0.6;
-          break;
-
-        case "dirty":
-          catGroup.rotation.y = Math.sin(elapsedTime * 3) * 0.1;
-          break;
-      }
-
-      renderer.render(scene, camera);
+      ctx.restore(); // end head group
+      ctx.restore(); // end main cat
     };
 
-    animate();
+    render();
 
     return () => {
       cancelAnimationFrame(reqId);
       window.removeEventListener("mousemove", handleMouseMove);
-      renderer.dispose();
     };
   }, [size]);
 
+  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const icons = ["❤️", "✨", "🐾", "⭐"];
+    const text = icons[Math.floor(Math.random() * icons.length)];
+
+    setParticles((prev) => [...prev, { id: Date.now(), x, y, text }]);
+
+    setTimeout(() => {
+      setParticles((prev) => prev.filter((p) => Date.now() - p.id < 1000));
+    }, 1000);
+  };
+
   return (
     <div
-      ref={mountRef}
-      className="relative flex items-center justify-center select-none cursor-pointer"
+      onClick={handleCanvasClick}
+      className="relative flex items-center justify-center select-none cursor-pointer group"
       style={{ width: `${size}px`, height: `${size}px` }}
-    />
+    >
+      <canvas
+        ref={canvasRef}
+        width={size}
+        height={size}
+        className="w-full h-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-300"
+      />
+
+      {/* Floating particles on click */}
+      {particles.map((p) => (
+        <span
+          key={p.id}
+          className="absolute text-sm font-bold animate-ping pointer-events-none"
+          style={{ left: `${p.x}px`, top: `${p.y}px` }}
+        >
+          {p.text}
+        </span>
+      ))}
+    </div>
   );
 }
