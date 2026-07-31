@@ -91,35 +91,52 @@ export const validGeneratedLessonFixture: GeneratedLesson = {
       correctIndex: 2,
     },
   ],
+  summary: "Alice and Bob discuss Bob's past trip to London two years ago. Bob shares highlights such as visiting the British Museum. The content is suitable for B1 intermediate learners.",
+  writingPrompts: [
+    {
+      viMeaning: "Bạn đã từng đến Luân Đôn chưa?",
+      enAnswer: "Have you ever visited London?",
+    },
+    {
+      viMeaning: "Tôi đã đi đến đó hai năm trước.",
+      enAnswer: "I went there two years ago.",
+    },
+  ],
   vocabItems: [
     {
       term: "Experience",
       meaning: "Knowledge or skill gained by doing things over time.",
+      ipa: "/ɪkˈspɪə.ri.əns/",
       example: "Traveling gives you valuable life experience.",
     },
     {
       term: "Wonderful",
       meaning: "Extremely good or pleasant.",
+      ipa: "/ˈwʌn.də.fəl/",
       example: "We had a wonderful time in Rome.",
     },
     {
       term: "Museum",
       meaning: "A building where objects of historical or artistic interest are kept.",
+      ipa: "/mjuːˈziː.əm/",
       example: "The British Museum is famous worldwide.",
     },
     {
       term: "Travel",
       meaning: "To go from one place to another.",
+      ipa: "/ˈtræv.əl/",
       example: "They love to travel during summer vacation.",
     },
     {
       term: "Celebrity",
       meaning: "A famous person.",
+      ipa: "/səˈleb.rə.ti/",
       example: "She spotted a celebrity at the airport.",
     },
     {
       term: "Graduation",
       meaning: "The receiving or conferring of an academic degree or diploma.",
+      ipa: "/ˌɡrædʒ.uˈeɪ.ʃən/",
       example: "His graduation ceremony was held in June.",
     },
   ],

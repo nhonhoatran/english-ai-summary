@@ -18,6 +18,8 @@ export interface LessonAnalysisOptions {
   quizCount?: number;
   vocabCount?: number;
   dialogueCount?: number;
+  writingPromptCount?: number;
+  targetLanguage?: "english" | "chinese";
 }
 
 export function buildLessonAnalysisPrompt(
@@ -28,11 +30,17 @@ export function buildLessonAnalysisPrompt(
   const quizCount = options?.quizCount || 5;
   const vocabCount = options?.vocabCount || 10;
   const dialogueCount = options?.dialogueCount || 20;
+  const writingPromptCount = options?.writingPromptCount || 8;
 
-  return `You are building an English lesson page in the exact style of elllo.org, from the
+  const isEnglish = (options?.targetLanguage ?? "english") === "english";
+  const langLabel = isEnglish ? "English" : "Chinese (Mandarin)";
+  const ipaLabel = isEnglish ? "IPA phonetic transcription (en-US)" : "Pinyin romanization";
+  const ipaExample = isEnglish ? "/teɪk ɒf/" : "nǐ hǎo";
+
+  return `You are building a ${langLabel} lesson page in the exact style of elllo.org, from the
 conversation transcript below.
 
-Produce FIVE things: lesson metadata, a grammar section, a quiz, a vocabulary list, and an ELLLO-style practice dialogue.
+Produce SEVEN things: lesson metadata, a grammar section, a quiz, a vocabulary list, an ELLLO-style practice dialogue, a lesson summary, and sentence-writing prompts.
 
 === 1. METADATA ===
 - title: short, natural, describes the conversation topic (e.g. "Making a Sandwich").
@@ -82,6 +90,7 @@ learner would likely NOT know - prefer idioms, phrasal verbs, and collocations
 over single easy nouns. For each:
   - term: the word or phrase as used in the conversation.
   - meaning: a short plain-English definition (under 15 words).
+  - ipa: ${ipaLabel} for this term (e.g. "${ipaExample}"). Must be a valid phonetic notation string.
   - example: ONE new sentence using the term correctly, different from the
     transcript's sentence.
 
@@ -93,6 +102,27 @@ STRICT CONTEXT ALIGNMENT & LENGTH RULES:
 - MANDATORY LENGTH: You MUST output EXACTLY ${dialogueCount} dialogue turns — no fewer, no more. Count carefully before finalizing.
 - GRAMMAR & VOCABULARY INTEGRATION: The dialogue must naturally demonstrate the target \`grammarTheme\` and naturally use several extracted \`vocabItems\`.
 - NATURAL CONVERSATION FLOW: Speakers ask follow-up questions, express interest, give natural reactions, and elaborate on details just like authentic ELLLO listening dialogues.
+
+=== 6. SUMMARY ===
+Write a concise summary of this video in 3-5 sentences. Include:
+- What the speakers discuss (the main topic)
+- 2-3 key points or themes covered
+- Suggested English level for this content (A1/A2/B1/B2/C1/C2)
+Write in plain English, friendly tone.
+
+=== 7. WRITING PROMPTS ===
+Create exactly ${writingPromptCount} sentence-writing exercises based on the transcript content.
+Each exercise gives the learner a Vietnamese meaning, and the learner must write the English sentence.
+
+For each:
+  - viMeaning: the Vietnamese translation of the sentence (plain, natural Vietnamese)
+  - enAnswer: the reference English sentence (short, natural, derivable from the transcript context)
+
+Rules:
+- Sentences should be SHORT (max 10 words) — learnable sentences, not paragraphs
+- viMeaning must be natural Vietnamese, not literal word-for-word translation
+- enAnswer must demonstrate the lesson's grammarTheme where possible
+- Each enAnswer must be UNIQUE — no duplicate sentences
 
 === TRANSCRIPT ===
 ${formattedTranscript}`;

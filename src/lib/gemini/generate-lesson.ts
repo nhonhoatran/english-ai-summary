@@ -4,6 +4,7 @@ import {
   QuizQuestion,
   VocabItem,
   DialogueLine,
+  WritingPrompt,
 } from "./lesson-schemas";
 import { executeTwoCallStrategy } from "./strategy-two-call";
 import { LessonAnalysisOptions } from "./prompt-lesson-analysis";
@@ -21,6 +22,8 @@ export interface GeneratedLesson {
   quizQuestions: QuizQuestion[];
   vocabItems: VocabItem[];
   dialogueLines: DialogueLine[];
+  summary: string;
+  writingPrompts: WritingPrompt[];
 }
 
 /**
@@ -52,6 +55,8 @@ export async function generateLesson(
         quizQuestions: result.analysis.quizQuestions,
         vocabItems: result.analysis.vocabItems,
         dialogueLines: result.analysis.dialogueLines,
+        summary: result.analysis.summary,
+        writingPrompts: result.analysis.writingPrompts,
       };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);

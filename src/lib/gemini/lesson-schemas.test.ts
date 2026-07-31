@@ -11,6 +11,8 @@ describe("lessonAnalysisSchema Zod Arity and Field Validation", () => {
     quizQuestions: validGeneratedLessonFixture.quizQuestions,
     vocabItems: validGeneratedLessonFixture.vocabItems,
     dialogueLines: validGeneratedLessonFixture.dialogueLines,
+    summary: validGeneratedLessonFixture.summary,
+    writingPrompts: validGeneratedLessonFixture.writingPrompts,
   };
 
   it("parses valid fixture successfully", () => {

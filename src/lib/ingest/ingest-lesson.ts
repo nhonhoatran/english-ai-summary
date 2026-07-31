@@ -109,12 +109,15 @@ export async function ingestLesson(
       await tx.grammarPoint.deleteMany({ where: { lessonId } });
       await tx.quizQuestion.deleteMany({ where: { lessonId } });
       await tx.vocabItem.deleteMany({ where: { lessonId } });
+      await tx.writingPrompt.deleteMany({ where: { lessonId } });
 
       await tx.lesson.update({
         where: { id: lessonId },
         data: {
           title: generated.title,
           description: generated.description,
+          summary: generated.summary,
+          targetLanguage: options?.targetLanguage ?? "english",
           grammarTheme: generated.grammarTheme,
           transcriptSource,
           status: "READY",
@@ -154,7 +157,15 @@ export async function ingestLesson(
               orderIndex: idx + 1,
               term: v.term,
               meaning: v.meaning,
+              ipa: v.ipa ?? null,
               example: v.example,
+            })),
+          },
+          writingPrompts: {
+            create: generated.writingPrompts.map((wp, idx) => ({
+              orderIndex: idx + 1,
+              viMeaning: wp.viMeaning,
+              enAnswer: wp.enAnswer,
             })),
           },
         },

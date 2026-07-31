@@ -31,27 +31,35 @@ enum FsrsRating {
   Easy
 }
 
+enum TargetLanguage {
+  english
+  chinese
+}
+
 model Lesson {
-  id               String       @id @default(cuid())
+  id               String          @id @default(cuid())
   userId           String
-  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  videoId          String       // YouTube 11-char id
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videoId          String          // YouTube 11-char id
   videoUrl         String
   title            String
-  description      String? // 1-line, elllo-style
+  description      String?         // 1-line, elllo-style
+  summary          String?         // AI-generated summary paragraph
+  targetLanguage   TargetLanguage  @default(english)
   durationSec      Int?
-  grammarTheme     String? // the ONE dominant structure
-  transcriptSource String // "youtube-captions" | "gemini"
-  status           IngestStatus @default(PENDING)
+  grammarTheme     String?         // the ONE dominant structure
+  transcriptSource String          // "youtube-captions" | "gemini"
+  status           IngestStatus    @default(PENDING)
   errorMessage     String?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
-  segments      TranscriptSegment[]
-  dialogueLines DialogueLine[]
-  grammarPoints GrammarPoint[]
-  quizQuestions QuizQuestion[]
-  vocabItems    VocabItem[]
+  segments       TranscriptSegment[]
+  dialogueLines  DialogueLine[]
+  grammarPoints  GrammarPoint[]
+  quizQuestions  QuizQuestion[]
+  vocabItems     VocabItem[]
+  writingPrompts WritingPrompt[]
 
   @@unique([userId, videoId])
   @@index([userId, createdAt])
@@ -104,11 +112,23 @@ model QuizQuestion {
   @@unique([lessonId, orderIndex])
 }
 
+model WritingPrompt {
+  id         String @id @default(cuid())
+  lessonId   String
+  orderIndex Int
+  viMeaning  String
+  enAnswer   String
+  lesson     Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, orderIndex])
+}
+
 model VocabItem {
   id         String     @id @default(cuid())
   lessonId   String
   orderIndex Int
   term       String
+  ipa        String?
   meaning    String
   example    String
   lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)

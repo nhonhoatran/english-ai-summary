@@ -20,12 +20,18 @@ export const quizQuestionSchema = z.object({
 export const vocabItemSchema = z.object({
   term: z.string().min(1),
   meaning: z.string().min(1),
+  ipa: z.string().optional(),
   example: z.string().min(1),
 });
 
 export const dialogueLineSchema = z.object({
   speaker: z.string().min(1),
   text: z.string().min(1),
+});
+
+export const writingPromptSchema = z.object({
+  viMeaning: z.string().min(1),
+  enAnswer: z.string().min(1),
 });
 
 export const lessonAnalysisSchema = z.object({
@@ -36,6 +42,8 @@ export const lessonAnalysisSchema = z.object({
   quizQuestions: z.array(quizQuestionSchema).min(1),
   vocabItems: z.array(vocabItemSchema).min(1),
   dialogueLines: z.array(dialogueLineSchema).min(1),
+  summary: z.string().min(1),
+  writingPrompts: z.array(writingPromptSchema).min(1),
 });
 
 export const transcriptSchema = z.array(transcriptSegmentSchema);
@@ -45,6 +53,7 @@ export type GrammarPoint = z.infer<typeof grammarPointSchema>;
 export type QuizQuestion = z.infer<typeof quizQuestionSchema>;
 export type VocabItem = z.infer<typeof vocabItemSchema>;
 export type DialogueLine = z.infer<typeof dialogueLineSchema>;
+export type WritingPrompt = z.infer<typeof writingPromptSchema>;
 export type LessonAnalysis = z.infer<typeof lessonAnalysisSchema>;
 
 /**
@@ -93,6 +102,7 @@ export function getLessonAnalysisJsonSchema(): Record<string, unknown> {
           properties: {
             term: { type: "string" },
             meaning: { type: "string" },
+            ipa: { type: "string" },
             example: { type: "string" },
           },
           required: ["term", "meaning", "example"],
@@ -109,6 +119,18 @@ export function getLessonAnalysisJsonSchema(): Record<string, unknown> {
           required: ["speaker", "text"],
         },
       },
+      summary: { type: "string" },
+      writingPrompts: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            viMeaning: { type: "string" },
+            enAnswer: { type: "string" },
+          },
+          required: ["viMeaning", "enAnswer"],
+        },
+      },
     },
     required: [
       "title",
@@ -118,6 +140,8 @@ export function getLessonAnalysisJsonSchema(): Record<string, unknown> {
       "quizQuestions",
       "vocabItems",
       "dialogueLines",
+      "summary",
+      "writingPrompts",
     ],
   };
 }
