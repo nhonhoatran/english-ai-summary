@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { CatState } from "@prisma/client";
 import { CatMood } from "@/lib/cat/compute-cat-mood";
 import { CatSprite, CatActionType } from "./cat-sprite";
@@ -77,6 +78,11 @@ export function CatGameModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [muted, setMuted] = useState(isCatMuted());
   const [quoteIndex, setQuoteIndex] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Keyboard Escape key to close modal
   useEffect(() => {
@@ -137,10 +143,10 @@ export function CatGameModal({
   const remainingPets = Math.max(0, 3 - (catState.petCount ?? 0));
   const currentQuote = SPEECH_BUBBLES[mood][quoteIndex % SPEECH_BUBBLES[mood].length];
 
-  return (
+  const modalJSX = (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-md p-4 sm:p-6 grid place-items-center min-h-full animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/70 backdrop-blur-md p-4 sm:p-6 grid place-items-center min-h-full animate-in fade-in duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -323,4 +329,6 @@ export function CatGameModal({
       </div>
     </div>
   );
+
+  return mounted ? createPortal(modalJSX, document.body) : null;
 }
