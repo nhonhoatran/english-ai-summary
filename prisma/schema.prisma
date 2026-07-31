@@ -36,6 +36,14 @@ enum TargetLanguage {
   chinese
 }
 
+enum PointSource {
+  daily_lesson
+  quiz_complete
+  writing_correct
+  flashcard_review
+  streak_bonus
+}
+
 model Lesson {
   id               String          @id @default(cuid())
   userId           String
@@ -60,6 +68,7 @@ model Lesson {
   quizQuestions  QuizQuestion[]
   vocabItems     VocabItem[]
   writingPrompts WritingPrompt[]
+  classrooms     Classroom[]
 
   @@unique([userId, videoId])
   @@index([userId, createdAt])
@@ -144,6 +153,10 @@ model User {
   updatedAt  DateTime    @updatedAt
   flashcards Flashcard[]
   lessons    Lesson[]
+  userPoints UserPoint[]
+  userStreak UserStreak?
+  catState   CatState?
+  classrooms Classroom[]  @relation("HostedClassrooms")
 }
 
 model Flashcard {
@@ -188,4 +201,71 @@ model ReviewLog {
   reviewedAt      DateTime // maps ReviewLog.review
 
   @@index([flashcardId, reviewedAt])
+}
+
+model UserPoint {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime    // truncate to UTC midnight
+  source    PointSource
+  points    Int
+  meta      Json?       // { lessonId?, quizScore?, cardId? }
+  createdAt DateTime    @default(now())
+
+  @@index([userId, date])
+}
+
+model UserStreak {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastActiveDate DateTime?
+  updatedAt      DateTime  @updatedAt
+}
+
+model CatState {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  happiness    Int       @default(80)
+  hunger       Int       @default(0)
+  cleanliness  Int       @default(100)
+  petCount     Int       @default(0)
+  lastFedAt    DateTime?
+  lastBathedAt DateTime?
+  lastPettedAt DateTime?
+  updatedAt    DateTime  @updatedAt
+}
+
+model Classroom {
+  id             String        @id @default(cuid())
+  code           String        @unique
+  hostUserId     String
+  host           User          @relation("HostedClassrooms", fields: [hostUserId], references: [id])
+  lessonId       String?
+  lesson         Lesson?       @relation(fields: [lessonId], references: [id])
+  isActive       Boolean       @default(true)
+  currentTab     String?
+  currentSegment Int?
+  lastSyncAt     DateTime?
+  createdAt      DateTime      @default(now())
+  members        ClassMember[]
+
+  @@index([code, isActive])
+}
+
+model ClassMember {
+  id          String    @id @default(cuid())
+  classroomId String
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  displayName String
+  phone       String?
+  joinedAt    DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+
+  @@unique([classroomId, displayName])
+  @@index([classroomId, lastSeenAt])
 }
