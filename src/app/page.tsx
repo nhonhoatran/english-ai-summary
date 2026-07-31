@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { AddLessonForm } from "@/components/add-lesson-form";
 import { LessonListCard } from "@/components/lesson/lesson-list-card";
 import { LogoutButton } from "@/components/logout-button";
+import { PointsWidget } from "@/components/points/points-widget";
 import Link from "next/link";
 import { Sparkles, Phone, BookOpen, BookMarked } from "lucide-react";
 import { requireAuth } from "@/lib/auth/require-auth";
@@ -55,7 +56,10 @@ export default async function Home() {
             </div>
             <span>SĐT: <strong className="text-white font-semibold">{session.phone}</strong></span>
           </div>
-          <LogoutButton />
+          <div className="flex items-center gap-3">
+            <PointsWidget />
+            <LogoutButton />
+          </div>
         </div>
 
         {/* Hero Section */}

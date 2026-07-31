@@ -15,6 +15,8 @@ import { TabVocabulary } from "@/components/lesson/tab-vocabulary";
 import { TabWritingPractice } from "@/components/lesson/tab-writing-practice";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { DeleteLessonButton } from "@/components/lesson/delete-lesson-button";
+import { PointsWidget } from "@/components/points/points-widget";
+import { LessonTimeTracker } from "@/components/points/lesson-time-tracker";
 
 interface LessonPageProps {
   params: Promise<{ id: string }>;
@@ -68,6 +70,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-8 relative overflow-hidden">
+      {/* Time tracker to award daily_lesson points after 30s */}
+      <LessonTimeTracker lessonId={lesson.id} />
+
       {/* Ambient background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-80 pointer-events-none -z-10 overflow-hidden">
         <div className="absolute top-[-20%] left-[30%] w-[450px] h-[250px] bg-blue-600/10 rounded-full blur-[100px]" />
@@ -83,11 +88,14 @@ export default async function LessonPage({ params }: LessonPageProps) {
             <ArrowLeft className="w-4 h-4 text-blue-400" />
             Back to lessons
           </Link>
-          <DeleteLessonButton
-            lessonId={lesson.id}
-            redirectOnSuccess={true}
-            variant="button"
-          />
+          <div className="flex items-center gap-3">
+            <PointsWidget />
+            <DeleteLessonButton
+              lessonId={lesson.id}
+              redirectOnSuccess={true}
+              variant="button"
+            />
+          </div>
         </div>
 
         {/* Lesson Header Card */}

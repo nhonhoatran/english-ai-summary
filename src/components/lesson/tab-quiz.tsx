@@ -32,6 +32,14 @@ export function TabQuiz({ questions }: TabQuizProps) {
 
   const handleCheck = () => {
     setIsChecked(true);
+    fetch("/api/points/award", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source: "quiz_complete",
+        meta: { score: correctCount },
+      }),
+    }).catch((err) => console.error("Failed to award quiz points:", err));
   };
 
   const handleReset = () => {

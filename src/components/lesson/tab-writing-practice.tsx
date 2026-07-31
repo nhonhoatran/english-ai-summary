@@ -83,6 +83,17 @@ export function TabWritingPractice({ prompts, targetLanguage = "english" }: TabW
       const result: CheckResult = await res.json();
       setCheckState({ status: "result", result });
       setScores((prev) => ({ ...prev, [currentIndex]: result }));
+
+      if (result.isCorrect) {
+        fetch("/api/points/award", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source: "writing_correct",
+            meta: { promptId: currentPrompt.id },
+          }),
+        }).catch((err) => console.error("Failed to award writing points:", err));
+      }
     } catch (err: any) {
       setCheckState({
         status: "error",
