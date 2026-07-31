@@ -109,11 +109,11 @@ export function PointsWidget() {
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md p-4 sm:p-6 grid place-items-center min-h-full animate-in fade-in duration-200"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg bg-zinc-950 p-6 border border-zinc-800 shadow-2xl space-y-6 relative rounded-2xl text-zinc-100"
+            className="w-full max-w-lg bg-zinc-950 p-5 sm:p-6 border border-zinc-800 shadow-2xl space-y-5 relative rounded-2xl text-zinc-100 font-sans text-left my-auto"
           >
             {/* Close Button Top Right */}
             <button
@@ -128,24 +128,28 @@ export function PointsWidget() {
             {/* Header */}
             <div className="space-y-1 pr-8">
               <div className="flex items-center gap-2.5">
-                <div className="p-2.5 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                <div className="p-2.5 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 shrink-0">
                   <Flame className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Streak & Điểm Thưởng</h3>
-                  <p className="text-xs text-zinc-400">Học đều đặn mỗi ngày để duy trì chuỗi và nhân đôi điểm!</p>
+                  <h3 className="text-base sm:text-lg font-bold text-white leading-snug">
+                    Streak & Điểm Thưởng
+                  </h3>
+                  <p className="text-xs text-zinc-400">
+                    Học đều đặn mỗi ngày để duy trì chuỗi và nhân đôi điểm!
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
               <div className="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-1">
                 <div className="text-[11px] text-zinc-400 flex items-center gap-1">
                   <Coins className="w-3.5 h-3.5 text-amber-400" />
                   Hôm nay
                 </div>
-                <div className="text-lg font-extrabold text-amber-300">
+                <div className="text-base sm:text-lg font-extrabold text-amber-300">
                   +{data.totalToday} pts
                 </div>
               </div>
@@ -153,12 +157,14 @@ export function PointsWidget() {
               <div className="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-1">
                 <div className="text-[11px] text-zinc-400 flex items-center gap-1">
                   <Flame className="w-3.5 h-3.5 text-orange-400" />
-                  Chuỗi hiện tại
+                  Chuỗi
                 </div>
-                <div className="text-lg font-extrabold text-orange-400 flex items-center gap-1">
-                  {data.currentStreak} ngày
+                <div className="text-base sm:text-lg font-extrabold text-orange-400 flex items-center gap-1">
+                  {data.currentStreak}d
                   {multiplier > 1 && (
-                    <span className="text-xs text-amber-300 font-normal"> (x{multiplier})</span>
+                    <span className="text-xs text-amber-300 font-normal">
+                      (x{multiplier})
+                    </span>
                   )}
                 </div>
               </div>
@@ -168,8 +174,8 @@ export function PointsWidget() {
                   <Trophy className="w-3.5 h-3.5 text-yellow-400" />
                   Kỷ lục
                 </div>
-                <div className="text-lg font-extrabold text-yellow-300">
-                  {data.longestStreak} ngày
+                <div className="text-base sm:text-lg font-extrabold text-yellow-300">
+                  {data.longestStreak}d
                 </div>
               </div>
             </div>

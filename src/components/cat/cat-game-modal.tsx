@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CatState } from "@prisma/client";
 import { CatMood } from "@/lib/cat/compute-cat-mood";
 import { CatSprite, CatActionType } from "./cat-sprite";
@@ -78,6 +78,17 @@ export function CatGameModal({
   const [muted, setMuted] = useState(isCatMuted());
   const [quoteIndex, setQuoteIndex] = useState(0);
 
+  // Keyboard Escape key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !catData) return null;
 
   const { catState, mood, pointsBalance } = catData;
@@ -127,13 +138,19 @@ export function CatGameModal({
   const currentQuote = SPEECH_BUBBLES[mood][quoteIndex % SPEECH_BUBBLES[mood].length];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 p-6 flex flex-col items-center">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-md p-4 sm:p-6 grid place-items-center min-h-full animate-in fade-in duration-200"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 p-5 sm:p-6 flex flex-col items-center font-sans text-slate-800 my-auto"
+      >
         {/* Top Controls: Sound Mute & Close */}
-        <div className="absolute top-4 right-4 flex items-center gap-2">
+        <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
           <button
             onClick={handleToggleSound}
-            className="text-slate-500 hover:text-slate-800 w-9 h-9 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors text-base"
+            className="text-slate-500 hover:text-slate-800 w-9 h-9 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors text-base cursor-pointer"
             title={muted ? "Bật âm thanh meow" : "Tắt âm thanh meow"}
             aria-label="Toggle Sound"
           >
@@ -145,7 +162,7 @@ export function CatGameModal({
               playCatPop();
               onClose();
             }}
-            className="text-slate-400 hover:text-slate-700 w-9 h-9 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors font-bold text-sm"
+            className="text-slate-400 hover:text-slate-700 w-9 h-9 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors font-bold text-sm cursor-pointer"
             aria-label="Đóng"
           >
             ✕
@@ -175,7 +192,7 @@ export function CatGameModal({
         </button>
 
         {/* Interactive Stage Arena */}
-        <div className="my-2 p-5 bg-gradient-to-b from-amber-50/60 via-orange-50/40 to-amber-100/50 rounded-3xl w-full flex flex-col justify-center items-center border border-amber-200/80 shadow-inner relative overflow-hidden group">
+        <div className="my-2 p-4 sm:p-5 bg-gradient-to-b from-amber-50/60 via-orange-50/40 to-amber-100/50 rounded-3xl w-full flex flex-col justify-center items-center border border-amber-200/80 shadow-inner relative overflow-hidden group">
           {/* Background Room Details */}
           <div className="absolute top-2 left-3 text-[10px] text-amber-800/40 font-medium tracking-wide">
             🏠 Phòng của Mochi
@@ -184,7 +201,7 @@ export function CatGameModal({
           <div className="py-2">
             <CatSprite
               mood={mood}
-              size={170}
+              size={160}
               actionState={actionState}
               onActionComplete={() => setActionState(null)}
               interactive={true}
