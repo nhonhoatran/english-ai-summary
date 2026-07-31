@@ -16,6 +16,8 @@ interface LessonTabsProps {
   quizTab: ReactNode;
   vocabTab: ReactNode;
   writingTab: ReactNode;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
 export function LessonTabs({
@@ -26,14 +28,21 @@ export function LessonTabs({
   quizTab,
   vocabTab,
   writingTab,
+  activeTab: controlledActiveTab,
+  onTabChange: controlledOnTabChange,
 }: LessonTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabValue>("summary");
+  const [internalActiveTab, setInternalActiveTab] = useState<TabValue>("summary");
+
+  const currentTab = (controlledActiveTab && VALID_TABS.includes(controlledActiveTab as TabValue))
+    ? (controlledActiveTab as TabValue)
+    : internalActiveTab;
 
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace("#", "");
       if (VALID_TABS.includes(hash as TabValue)) {
-        setActiveTab(hash as TabValue);
+        setInternalActiveTab(hash as TabValue);
+        controlledOnTabChange?.(hash);
       }
     };
 
@@ -44,13 +53,14 @@ export function LessonTabs({
 
   const handleTabChange = (val: string) => {
     if (VALID_TABS.includes(val as TabValue)) {
-      setActiveTab(val as TabValue);
+      setInternalActiveTab(val as TabValue);
+      controlledOnTabChange?.(val);
       window.history.replaceState(null, "", `#${val}`);
     }
   };
 
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-6">
+    <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full space-y-6">
       <div className="relative">
         <TabsList className="w-full justify-start bg-zinc-900/90 backdrop-blur-md border border-zinc-800/80 p-1.5 rounded-2xl h-auto gap-1.5 flex overflow-x-auto no-scrollbar shadow-xl">
           <TabsTrigger

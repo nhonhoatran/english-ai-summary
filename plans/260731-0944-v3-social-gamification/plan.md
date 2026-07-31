@@ -1,7 +1,7 @@
-﻿---
+---
 title: "Feature V3: Social & Gamification"
-description: "3 tÃ­nh nÄƒng má»›i: Tracking Points (streak + multiplier), Mini game NuÃ´i MÃ¨o tÆ°Æ¡ng tÃ¡c, Lá»›p Há»c real-time."
-status: in_progress
+description: "3 tính năng mới: Tracking Points (streak + multiplier), Mini game Nuôi Mèo tương tác, Lớp Học real-time."
+status: completed
 priority: P1
 effort: 22h
 branch: feature/v3-social-gamification
@@ -15,17 +15,17 @@ created: 2026-07-31
 
 ## Overview
 
-App V2 há»— trá»£ há»c 1 mÃ¬nh. V3 thÃªm 3 lá»›p tÃ­nh nÄƒng:
-1. **Tracking Points** â€“ tÃ­ch Ä‘iá»ƒm + streak multiplier Ä‘á»ƒ táº¡o thÃ³i quen há»c
-2. **Mini game NuÃ´i MÃ¨o** â€“ mÃ¨o Ä‘en tráº¯ng CSS art, 6 tráº¡ng thÃ¡i, dÃ¹ng Ä‘iá»ƒm Ä‘á»ƒ chÄƒm mÃ¨o
-3. **Lá»›p Há»c** â€“ real-time sync via polling 3s, Vercel-compatible
+App V2 hỗ trợ học 1 mình. V3 thêm 3 lớp tính năng:
+1. **Tracking Points** – tích điểm + streak multiplier để tạo thói quen học
+2. **Mini game Nuôi Mèo** – mèo đen/trắng CSS art, 6 trạng thái, dùng điểm để chăm mèo
+3. **Lớp Học** – real-time sync via polling 3s, Vercel-compatible
 
-## Architecture Invariant (Káº¿ thá»«a tá»« V2)
+## Architecture Invariant (Kế thừa từ V2)
 
-- AI runs EXACTLY ONCE at ingest â€“ khÃ´ng thÃªm AI call trong render path
-- NEVER `prisma db push` â€“ luÃ´n `prisma migrate dev --name ...`
-- File size < 200 lines â€“ split náº¿u vÆ°á»£t
-- Typecheck sau má»—i phase
+- AI runs EXACTLY ONCE at ingest – không thêm AI call trong render path
+- NEVER `prisma db push` – luôn `prisma migrate dev --name ...`
+- File size < 200 lines – split nếu vượt
+- Typecheck sau mỗi phase
 
 ## Phases
 
@@ -34,28 +34,28 @@ App V2 há»— trá»£ há»c 1 mÃ¬nh. V3 thÃªm 3 lá»›p tÃ­nh nÄ�
 | 1 | [DB Schema Migration](./phase-01-db-schema.md) | Completed | 2h |
 | 2 | [Tracking Points API + UI](./phase-02-tracking-points.md) | Completed | 5h |
 | 3 | [Mini Game Nuôi Mèo](./phase-03-cat-minigame.md) | Completed | 7h |
-| 4 | [Lá»›p Há»c (Classroom)](./phase-04-classroom.md) | Pending | 8h |
+| 4 | [Lớp Học (Classroom)](./phase-04-classroom.md) | Completed | 8h |
 
 ## Dependencies
 
-- Phase 02, 03, 04 Ä‘á»u depend on Phase 01 (DB schema)
-- Phase 03 depend on Phase 02 (cáº§n UserPoint Ä‘á»ƒ deduct points)
-- Phase 04 Ä‘á»™c láº­p vá»›i 02, 03 (chá»‰ cáº§n 01)
+- Phase 02, 03, 04 đều depend on Phase 01 (DB schema)
+- Phase 03 depend on Phase 02 (cần UserPoint để deduct points)
+- Phase 04 độc lập với 02, 03 (chỉ cần 01)
 
-## Key Decisions (tá»« Brainstorm)
+## Key Decisions (từ Brainstorm)
 
-| Quyáº¿t Ä‘á»‹nh | Chá»n | LÃ½ do |
+| Quyết định | Chọn | Lý do |
 |---|---|---|
-| Real-time tech | Polling 3s | Vercel khÃ´ng support persistent WebSocket |
-| Cat visual | CSS art thuáº§n | KhÃ´ng load áº£nh, animate mÆ°á»£t, responsive |
-| Classroom chat | SKIP MVP | ThÃªm complexity khÃ´ng cáº§n thiáº¿t |
-| Points anti-spam | Rate limit + server-verify | TrÃ¡nh gian láº­n Ä‘iá»ƒm |
+| Real-time tech | Polling 3s | Vercel không support persistent WebSocket |
+| Cat visual | CSS art thuần | Không load ảnh, animate mượt, responsive |
+| Classroom chat | SKIP MVP | Thêm complexity không cần thiết |
+| Points anti-spam | Rate limit + server-verify | Tránh gian lận điểm |
 
 ## Hard Rules
 
 - NEVER `prisma db push`
-- File < 200 lines â€“ split náº¿u vÆ°á»£t
-- Cat actions: deduct points TRÆ¯á»šC rá»“i má»›i update state
+- File < 200 lines – split nếu vượt
+- Cat actions: deduct points TRƯỚC rồi mới update state
 - Cron: verify `Authorization: Bearer $CRON_SECRET`
-- Classroom: chá»‰ hostUserId má»›i POST /sync vÃ  /end
-- Typecheck sau má»—i phase
+- Classroom: chỉ hostUserId mới POST /sync và /end
+- Typecheck sau mỗi phase

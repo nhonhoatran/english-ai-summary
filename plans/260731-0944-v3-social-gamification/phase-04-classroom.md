@@ -1,190 +1,59 @@
-# Phase 04 ó L?p H?c (Classroom)
+# Phase 04 - L·ªõp H·ªçc (Classroom - Socket.io Realtime)
 
 ## Overview
 
 - **Priority:** P1
 - **Effort:** 8h
-- **Status:** Pending
+- **Status:** Completed
 - **Depends on:** Phase 01 (DB Schema)
 
-TÌnh nang l?p h?c real-time: host t?o l?p ? share link ? members join ? c˘ng xem b‡i theo sync c?a host.
-
-## Requirements
-
-### Functional
-- Host t?o l?p t? lesson page ? nh?n code 6 k˝ t? (VD: "ENG4X2")
-- Member v‡o link `/classroom/[code]` ? nh?p tÍn hi?n th? + phone (optional)
-- Members du?c sync tab/segment khi host navigate
-- Toggle "T? do" d? member t? navigate
-- Host "K?t th˙c l?p" ? session dÛng
-- Danh s·ch member online (lastSeenAt < 10s)
-
-### Non-functional
-- Real-time via polling 3s (Vercel-compatible)
-- KhÙng c?n chat (SKIP MVP)
-- KhÙng c?n leaderboard trong classroom (SKIP MVP)
-- Code classroom unique, retry n?u tr˘ng
+T√≠nh nƒÉng l·ªõp h·ªçc real-time s·ª≠ d·ª•ng **Socket.io WebSocket** (k√®m DB fallback): host t·∫°o l·ªõp -> share link -> members join -> c√πng xem b√†i theo sync th·ªùi gian th·ª±c 0ms c·ªßa host.
 
 ## Architecture
 
-### Polling Strategy
+### Socket.io Strategy
 
 ```
-Host side:
-  - Khi navigate tab/segment ? POST /api/classroom/[code]/sync
-  - Immediate, khÙng c?n interval
+Server: Custom Node.js server (server.js) + Socket.io Server attached at /api/socket/io
 
-Member side:
-  - useEffect v?i setInterval(3000)
-  - GET /api/classroom/[code]/state ? c?p nh?t lastSeenAt
-  - So s·nh lastSyncAt v?i prevSyncAt
-  - N?u thay d?i ? navigate theo host
-  - Stop polling khi isFreeMode = true ho?c isActive = false
-```
-
-### Code Generation
-
-```typescript
-// generate-code.ts
-function generateCode(): string {
-  // 6 chars: uppercase letters + digits, no ambiguous (0, O, I, l)
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  return Array.from({ length: 6 }, () => chars[Math.random() * chars.length | 0]).join('')
-}
-// Verify unique trong DB, retry t?i da 5 l?n
-```
-
-### Online Detection
-
-```sql
--- Members "online" = lastSeenAt trong 10 gi‚y g?n nh?t
-WHERE classroomId = ? AND lastSeenAt > NOW() - INTERVAL '10 seconds'
+Events:
+  - join-room ({ code, displayName })
+  - sync-state ({ code, currentTab, currentSegment }) -> broadcast state-updated
+  - end-room ({ code }) -> broadcast room-ended
+  - member-joined / member-left -> instant member list refresh
 ```
 
 ## Related Code Files
 
-| File | Action | MÙ t? |
+| File | Action | M√¥ t·∫£ |
 |------|--------|--------|
-| `src/lib/classroom/generate-code.ts` | Create | Unique 6-char code |
-| `src/app/api/classroom/create/route.ts` | Create | POST ó host t?o l?p |
-| `src/app/api/classroom/[code]/join/route.ts` | Create | POST ó member join |
-| `src/app/api/classroom/[code]/state/route.ts` | Create | GET ó poll state |
-| `src/app/api/classroom/[code]/sync/route.ts` | Create | POST ó host push state |
-| `src/app/api/classroom/[code]/end/route.ts` | Create | POST ó host end |
-| `src/app/api/classroom/[code]/members/route.ts` | Create | GET ó online list |
+| `server.js` | Create | Custom Node server t√≠ch h·ª£p Socket.io Server |
+| `src/lib/socket.ts` | Create | Client-side Socket.io singleton connection |
+| `src/lib/classroom/generate-code.ts` | Create | Unique 6-char code generation |
+| `src/app/api/classroom/create/route.ts` | Create | POST -> host t·∫°o l·ªõp |
+| `src/app/api/classroom/[code]/join/route.ts` | Create | POST -> member join |
+| `src/app/api/classroom/[code]/state/route.ts` | Create | GET -> state fallback |
+| `src/app/api/classroom/[code]/sync/route.ts` | Create | POST -> host push state to DB |
+| `src/app/api/classroom/[code]/end/route.ts` | Create | POST -> host end room in DB |
+| `src/app/api/classroom/[code]/members/route.ts` | Create | GET -> online members list |
 | `src/app/classroom/[code]/page.tsx` | Create | Classroom page |
-| `src/components/classroom/classroom-viewer.tsx` | Create | Synced lesson view |
-| `src/components/classroom/member-list.tsx` | Create | Online members panel |
+| `src/components/classroom/classroom-viewer.tsx` | Modify | Synced lesson view via Socket.io |
+| `src/components/classroom/member-list.tsx` | Modify | Online members panel via Socket events |
 | `src/components/classroom/create-classroom-btn.tsx` | Create | Button + share modal |
-| `src/app/lessons/[id]/page.tsx` | Modify | ThÍm "T?o l?p" button |
-
-## Implementation Steps
-
-1. **`generate-code.ts`**
-   - Gen 6 chars t? safe charset
-   - Check DB unique, retry max 5
-
-2. **`POST /api/classroom/create`**
-   - Auth: verify user t? session
-   - Verify `lessonId` belongs to userId
-   - Gen unique code
-   - Create `Classroom` record
-   - Return `{ code, url: '/classroom/' + code }`
-
-3. **`POST /api/classroom/[code]/join`**
-   - Validate classroom t?n t?i + isActive = true
-   - Validate `displayName` unique trong classroom
-   - Create `ClassMember` record
-   - Set cookie `classroom_member_id` cho session
-   - Return `{ memberId, classroom }`
-
-4. **`GET /api/classroom/[code]/state`**
-   - Load classroom state (currentTab, currentSegment, lastSyncAt, isActive)
-   - Update `ClassMember.lastSeenAt` = NOW (via memberId t? cookie)
-   - Return state
-
-5. **`POST /api/classroom/[code]/sync`**
-   - Verify caller `userId` = `classroom.hostUserId`
-   - Update: currentTab, currentSegment, lastSyncAt
-   - Return updated state
-
-6. **`POST /api/classroom/[code]/end`**
-   - Verify caller = hostUserId
-   - Set `isActive = false`
-
-7. **`GET /api/classroom/[code]/members`**
-   - Return members WHERE lastSeenAt > NOW - 10s
-   - Include displayName, joinedAt
-
-8. **`classroom/[code]/page.tsx`**
-   - Server component: load classroom basic info
-   - If not member (no cookie) ? render join form
-   - If member ? render `<ClassroomViewer />`
-
-9. **`classroom-viewer.tsx`**
-   ```typescript
-   // State: isFreeMode (default false)
-   // useEffect: setInterval poll state m?i 3s
-   //   ? so s·nh lastSyncAt
-   //   ? n?u changed + !isFreeMode ? navigate
-   // Render: lesson tabs (reuse existing components)
-   // Top bar: "?? –ang h?c c˘ng [Host]" | toggle "T? do"
-   // Right panel: <MemberList />
-   ```
-
-10. **`member-list.tsx`**
-    - Fetch `/api/classroom/[code]/members` m?i 3s
-    - Hi?n th? avatar initial + displayName
-    - Badge "Host" cho host
-
-11. **`create-classroom-btn.tsx`**
-    - Button: "?? T?o l?p h?c"
-    - POST /api/classroom/create
-    - Modal: hi?n th? link + n˙t copy
-
-12. **Lesson page** ó thÍm `<CreateClassroomBtn lessonId={lesson.id} />` khi `lesson.status === 'READY'`
-
-13. `npx tsc --noEmit` ó zero errors
+| `src/app/lessons/[id]/page.tsx` | Modify | Th√™m "T·∫°o l·ªõp" button |
 
 ## Todo
 
-- [ ] `src/lib/classroom/generate-code.ts`
-- [ ] `POST /api/classroom/create` ó verify lesson ownership
-- [ ] `POST /api/classroom/[code]/join` ó unique displayName check
-- [ ] `GET /api/classroom/[code]/state` ó update lastSeenAt
-- [ ] `POST /api/classroom/[code]/sync` ó host only
-- [ ] `POST /api/classroom/[code]/end` ó host only
-- [ ] `GET /api/classroom/[code]/members` ó online filter
-- [ ] `src/app/classroom/[code]/page.tsx`
-- [ ] `src/components/classroom/classroom-viewer.tsx` ó polling hook
-- [ ] `src/components/classroom/member-list.tsx`
-- [ ] `src/components/classroom/create-classroom-btn.tsx`
-- [ ] Lesson page: thÍm Create button
-- [ ] `npx tsc --noEmit` ó zero errors
+- [x] T√≠ch h·ª£p `socket.io` & `socket.io-client` v√†o `server.js` & `src/lib/socket.ts`
+- [x] Realtime sync tab & segment b·∫±ng WebSocket 0ms
+- [x] Realtime c·∫≠p nh·∫≠t danh s√°ch th√†nh vi√™n khi Join/Leave
+- [x] Realtime b√°o l·ªõp k·∫øt th√∫c khi Host b·∫•m "K·∫øt th√∫c l·ªõp"
+- [x] `npx tsc --noEmit` - zero errors
 
 ## Success Criteria
 
-- Host t?o l?p ? nh?n code, share link
-- Member join v?i display name ? th?y lesson synced
-- Member t? navigate khi b?t "T? do"
-- Member list c?p nh?t d˙ng (online/offline)
-- Host "K?t th˙c" ? member redirect ra kh?i l?p
-- 3s polling khÙng g‚y lag noticeable
-
-## Risk Assessment
-
-| Risk | Likelihood | Mitigation |
-|------|-----------|------------|
-| Code collision | Very Low | Retry 5 l?n, 36^6 = 2.1B combinations |
-| Polling qu· nhi?u (N members ◊ 3s) | Medium | State endpoint nh? (1 DB row), OK cho <50 members |
-| Member spoofing (gi? l‡m host) | Medium | Verify `userId` = `hostUserId` t? session, khÙng t? body |
-| Cookie m?t ? member b? kick | Low | Cookie path = `/classroom/[code]`, SameSite=Lax |
-| Race condition: 2 ngu?i join c˘ng displayName | Low | `@@unique([classroomId, displayName])` ó DB constraint |
-
-## Security Considerations
-
-- `/sync` v‡ `/end`: verify userId = hostUserId t? session server-side
-- Code generation: d˘ng `crypto.getRandomValues` n?u cÛ th? (khÙng Math.random)
-- Cookie: HttpOnly, SameSite=Lax, khÙng expose memberId ra client bundle
-- Validate displayName: max 30 chars, strip HTML tags
-- isActive check: ?n classroom sau khi ended (khÙng serve stale data)
+- Host t·∫°o l·ªõp -> nh·∫≠n code, share link
+- Member join v·ªõi display name -> th·∫•y lesson synced t·ª©c th√¨ via Socket.io
+- Member t·ª± navigate khi b·∫≠t "T·ª± do"
+- Host "K·∫øt th√∫c" -> t·∫•t c·∫£ member nh·∫≠n t√≠n hi·ªáu ƒë√≥ng room t·ª©c th√¨
+- TypeScript build 0 l·ªói

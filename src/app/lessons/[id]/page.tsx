@@ -15,6 +15,7 @@ import { TabVocabulary } from "@/components/lesson/tab-vocabulary";
 import { TabWritingPractice } from "@/components/lesson/tab-writing-practice";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { DeleteLessonButton } from "@/components/lesson/delete-lesson-button";
+import { CreateClassroomBtn } from "@/components/classroom/create-classroom-btn";
 import { PointsWidget } from "@/components/points/points-widget";
 import { LessonTimeTracker } from "@/components/points/lesson-time-tracker";
 
@@ -89,6 +90,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
             Back to lessons
           </Link>
           <div className="flex items-center gap-3">
+            <CreateClassroomBtn lessonId={lesson.id} />
             <PointsWidget />
             <DeleteLessonButton
               lessonId={lesson.id}
