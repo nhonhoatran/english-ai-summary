@@ -42,6 +42,9 @@ enum PointSource {
   writing_correct
   flashcard_review
   streak_bonus
+  cat_feed
+  cat_bath
+  cat_play
 }
 
 model Lesson {

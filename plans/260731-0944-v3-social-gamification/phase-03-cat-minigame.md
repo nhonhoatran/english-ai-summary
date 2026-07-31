@@ -1,26 +1,26 @@
-# Phase 03 — Mini Game Nuôi Mèo ??
+ï»¿# Phase 03 â€” Mini Game NuÃ´i MÃ¨o ??
 
 ## Overview
 
 - **Priority:** P2
 - **Effort:** 7h
-- **Status:** Pending
+- **Status:** Completed
 - **Depends on:** Phase 01 (DB Schema), Phase 02 (Tracking Points)
 
-Mini game nuôi mèo den tr?ng kawaii. Mèo thay d?i tr?ng thái theo thói quen h?c. User dùng di?m tích du?c d? cham mèo.
+Mini game nuÃ´i mÃ¨o den tr?ng kawaii. MÃ¨o thay d?i tr?ng thÃ¡i theo thÃ³i quen h?c. User dÃ¹ng di?m tÃ­ch du?c d? cham mÃ¨o.
 
 ## Requirements
 
 ### Functional
-- Mèo có 6 tr?ng thái: `happy`, `playing`, `hungry`, `dirty`, `sleeping`, `sad`
-- 4 hành d?ng: Cho an (5 pts), T?m (10 pts), Vu?t ve (free, max 3/ngày), Choi (15 pts)
-- Cron job hàng ngày decay các ch? s? n?u không h?c
-- Widget floating góc ph?i màn hình
+- MÃ¨o cÃ³ 6 tr?ng thÃ¡i: `happy`, `playing`, `hungry`, `dirty`, `sleeping`, `sad`
+- 4 hÃ nh d?ng: Cho an (5 pts), T?m (10 pts), Vu?t ve (free, max 3/ngÃ y), Choi (15 pts)
+- Cron job hÃ ng ngÃ y decay cÃ¡c ch? s? n?u khÃ´ng h?c
+- Widget floating gÃ³c ph?i mÃ n hÃ¬nh
 - Modal full mini-game khi click widget
 
 ### Non-functional
-- Cat visual = CSS art thu?n (không load ?nh PNG)
-- M?i state = CSS class + `@keyframes` riêng
+- Cat visual = CSS art thu?n (khÃ´ng load ?nh PNG)
+- M?i state = CSS class + `@keyframes` riÃªng
 - Deduct points TRU?C r?i m?i update cat state
 - Cron endpoint ph?i verify `CRON_SECRET`
 
@@ -53,7 +53,7 @@ Clamp all values [0, 100]
 
 ### CSS Cat Design (6 states)
 
-Mèo den tr?ng kawaii — CSS art thu?n:
+MÃ¨o den tr?ng kawaii â€” CSS art thu?n:
 ```css
 .cat { /* base: body tr?ng, patch den, tai, m?t */ }
 .cat.happy { animation: bounce 1s ease infinite; }
@@ -66,23 +66,23 @@ Mèo den tr?ng kawaii — CSS art thu?n:
 
 ## Related Code Files
 
-| File | Action | Mô t? |
+| File | Action | MÃ´ t? |
 |------|--------|--------|
 | `src/lib/cat/compute-cat-mood.ts` | Create | Pure function: state ? mood |
 | `src/app/api/cat/route.ts` | Create | GET state + computed mood |
-| `src/app/api/cat/feed/route.ts` | Create | POST — cho an |
-| `src/app/api/cat/bath/route.ts` | Create | POST — t?m mèo |
-| `src/app/api/cat/pet/route.ts` | Create | POST — vu?t ve (free) |
-| `src/app/api/cat/play/route.ts` | Create | POST — choi |
-| `src/app/api/cron/cat-decay/route.ts` | Create | POST — daily decay |
+| `src/app/api/cat/feed/route.ts` | Create | POST â€” cho an |
+| `src/app/api/cat/bath/route.ts` | Create | POST â€” t?m mÃ¨o |
+| `src/app/api/cat/pet/route.ts` | Create | POST â€” vu?t ve (free) |
+| `src/app/api/cat/play/route.ts` | Create | POST â€” choi |
+| `src/app/api/cron/cat-decay/route.ts` | Create | POST â€” daily decay |
 | `src/components/cat/cat-sprite.tsx` | Create | CSS animated cat |
 | `src/components/cat/cat-widget.tsx` | Create | Floating widget 80px |
 | `src/components/cat/cat-game-modal.tsx` | Create | Full modal mini-game |
-| `vercel.json` | Modify | Thêm cron schedule |
+| `vercel.json` | Modify | ThÃªm cron schedule |
 
 ## Implementation Steps
 
-1. **`compute-cat-mood.ts`** — pure function, không có side effects
+1. **`compute-cat-mood.ts`** â€” pure function, khÃ´ng cÃ³ side effects
    ```typescript
    export function computeCatMood(params: {
      cat: CatState
@@ -93,13 +93,13 @@ Mèo den tr?ng kawaii — CSS art thu?n:
    }): 'happy' | 'playing' | 'hungry' | 'dirty' | 'sleeping' | 'sad'
    ```
 
-2. **`GET /api/cat`** — tr? v? full state + computed mood
-   - Load CatState (upsert default n?u chua có)
+2. **`GET /api/cat`** â€” tr? v? full state + computed mood
+   - Load CatState (upsert default n?u chua cÃ³)
    - Load todayPoints + streak t? UserPoint/UserStreak
    - G?i `computeCatMood()`
    - Return `{ catState, mood, todayPoints, pointsBalance }`
 
-3. **Action APIs** — pattern chung:
+3. **Action APIs** â€” pattern chung:
    ```
    POST /api/cat/[action]
    1. Load CatState
@@ -117,23 +117,23 @@ Mèo den tr?ng kawaii — CSS art thu?n:
 5. **`cat-sprite.tsx`**
    - Pure CSS cat illustration
    - Props: `{ mood: CatMood; size?: number }`
-   - Mèo den tr?ng: body tròn (white + black patch), tai nh?n, duôi cong
+   - MÃ¨o den tr?ng: body trÃ²n (white + black patch), tai nh?n, duÃ´i cong
    - 6 animation classes tuong ?ng 6 moods
 
 6. **`cat-widget.tsx`**
    - Floating div: `position: fixed; bottom: 24px; right: 24px`
-   - Size: 80x80px + 3 mini status bars bên du?i
+   - Size: 80x80px + 3 mini status bars bÃªn du?i
    - Fetch `/api/cat` khi mount, re-fetch m?i 60s
    - Click ? m? `<CatGameModal />`
 
 7. **`cat-game-modal.tsx`**
    - Modal dialog
    - `<CatSprite size={200} mood={mood} />`
-   - Tên mèo: "Mochi" (c? d?nh)
+   - TÃªn mÃ¨o: "Mochi" (c? d?nh)
    - Status bars: ?? {happiness}% | ?? {hunger}% | ?? {cleanliness}%
-   - 4 nút action v?i cost hi?n th?
-   - "B?n có X ?" — di?m hi?n t?i
-   - Nút disabled + tooltip n?u không d? di?m
+   - 4 nÃºt action v?i cost hi?n th?
+   - "B?n cÃ³ X ?" â€” di?m hi?n t?i
+   - NÃºt disabled + tooltip n?u khÃ´ng d? di?m
 
 8. **`vercel.json`**
    ```json
@@ -145,49 +145,50 @@ Mèo den tr?ng kawaii — CSS art thu?n:
    }
    ```
 
-9. **Thêm `<CatWidget />` vào layout** (fixed position, không ?nh hu?ng layout)
+9. **ThÃªm `<CatWidget />` vÃ o layout** (fixed position, khÃ´ng ?nh hu?ng layout)
 
-10. `.env` — thêm `CRON_SECRET=<random-uuid>`
+10. `.env` â€” thÃªm `CRON_SECRET=<random-uuid>`
 
-11. `npx tsc --noEmit` — zero errors
+11. `npx tsc --noEmit` â€” zero errors
 
 ## Todo
 
-- [ ] `src/lib/cat/compute-cat-mood.ts` — pure function
-- [ ] `src/app/api/cat/route.ts` — GET state + mood
-- [ ] `src/app/api/cat/feed/route.ts` — deduct 5 pts
-- [ ] `src/app/api/cat/bath/route.ts` — deduct 10 pts
-- [ ] `src/app/api/cat/pet/route.ts` — free, max 3/day
-- [ ] `src/app/api/cat/play/route.ts` — deduct 15 pts
-- [ ] `src/app/api/cron/cat-decay/route.ts` — batch decay
-- [ ] `src/components/cat/cat-sprite.tsx` — CSS art 6 states
-- [ ] `src/components/cat/cat-widget.tsx` — floating 80px
-- [ ] `src/components/cat/cat-game-modal.tsx` — full modal
-- [ ] `vercel.json` — cron schedule
-- [ ] `.env` — thêm `CRON_SECRET`
-- [ ] Layout: mount `<CatWidget />`
-- [ ] `npx tsc --noEmit` — zero errors
+- [x] `src/lib/cat/compute-cat-mood.ts` â€” pure function
+- [x] `src/app/api/cat/route.ts` â€” GET state + mood
+- [x] `src/app/api/cat/feed/route.ts` â€” deduct 5 pts
+- [x] `src/app/api/cat/bath/route.ts` â€” deduct 10 pts
+- [x] `src/app/api/cat/pet/route.ts` â€” free, max 3/day
+- [x] `src/app/api/cat/play/route.ts` â€” deduct 15 pts
+- [x] `src/app/api/cron/cat-decay/route.ts` â€” batch decay
+- [x] `src/components/cat/cat-sprite.tsx` â€” CSS art 6 states
+- [x] `src/components/cat/cat-widget.tsx` â€” floating 80px
+- [x] `src/components/cat/cat-game-modal.tsx` â€” full modal
+- [x] `vercel.json` â€” cron schedule
+- [x] `.env` â€” thÃªm `CRON_SECRET`
+- [x] Layout: mount `<CatWidget />`
+- [x] `npx tsc --noEmit` â€” zero errors
 
 ## Success Criteria
 
-- Mèo d?i state khi user h?c / không h?c
-- Cho an tr? dúng 5 di?m và hunger gi?m
-- Vu?t ve b? ch?n sau 3 l?n/ngày
-- Cron decay ch?y dúng (test v?i manual POST + CRON_SECRET)
-- CSS animation mu?t, không flicker
-- Widget không che n?i dung chính (z-index dúng)
+- MÃ¨o d?i state khi user h?c / khÃ´ng h?c
+- Cho an tr? dÃºng 5 di?m vÃ  hunger gi?m
+- Vu?t ve b? ch?n sau 3 l?n/ngÃ y
+- Cron decay ch?y dÃºng (test v?i manual POST + CRON_SECRET)
+- CSS animation mu?t, khÃ´ng flicker
+- Widget khÃ´ng che n?i dung chÃ­nh (z-index dÃºng)
 
 ## Risk Assessment
 
 | Risk | Likelihood | Mitigation |
 |------|-----------|------------|
-| CSS cat trông x?u / không nh?n ra là mèo | Medium | Test early, có th? dùng emoji ?? làm fallback base |
-| Timezone decay sai gi? | Medium | Cron UTC 00:00 = 7h sáng VN, ph?i tính theo UTC day |
+| CSS cat trÃ´ng x?u / khÃ´ng nh?n ra lÃ  mÃ¨o | Medium | Test early, cÃ³ th? dÃ¹ng emoji ?? lÃ m fallback base |
+| Timezone decay sai gi? | Medium | Cron UTC 00:00 = 7h sÃ¡ng VN, ph?i tÃ­nh theo UTC day |
 | Race condition deduct + update | Low | Sequential: deduct FIRST, then update state |
-| Cron CRON_SECRET leak | Low | Dùng env var, không hardcode, verify trong handler |
+| Cron CRON_SECRET leak | Low | DÃ¹ng env var, khÃ´ng hardcode, verify trong handler |
 
 ## Security Considerations
 
-- Cron endpoint: `if (!secret) return 401` — TRU?C khi x? lý
-- Deduct points: verify userId t? session, không t? body
-- petCount check server-side, không trust client
+- Cron endpoint: `if (!secret) return 401` â€” TRU?C khi x? lÃ½
+- Deduct points: verify userId t? session, khÃ´ng t? body
+- petCount check server-side, khÃ´ng trust client
+

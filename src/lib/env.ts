@@ -6,6 +6,7 @@ const schema = z.object({
   GEMINI_API_KEY: z.string().min(1),
   APP_PASSWORD: z.string().min(8),
   AUTH_SECRET: z.string().min(32),
+  CRON_SECRET: z.string().optional(),
   GEMINI_MODEL: z.string().default("gemini-3.6-flash"),
 });
 
