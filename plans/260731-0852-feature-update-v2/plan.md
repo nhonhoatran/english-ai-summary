@@ -1,7 +1,7 @@
 ---
 title: "Feature Update V2: IPA, Summary, Writing Practice, Multi-language, Full UI Redesign"
 description: "6 new features: IPA on vocabulary, AI summary tab, sentence writing practice tab, TikTok dropped, English+Chinese multi-language, full UI/UX redesign."
-status: pending
+status: completed
 priority: P1
 effort: 28h
 branch: feature/v2-feature-update
@@ -47,7 +47,7 @@ Exception duy nhat: Tab Viet lai cau co Gemini semantic check moi lan user submi
 | 04 | Tab Summary UI | P2 | 1h | completed | 02 |
 | 05 | Tab Viet lai cau + Gemini check API | P2 | 4h | completed | 02 |
 | 06 | Multi-language: Add-form + Captions + Prompts | P1 | 5h | completed | 02 |
-| 07 | Full UI/UX Redesign | P2 | 10h | pending | 01-06 |
+| 07 | Full UI/UX Redesign | P2 | 10h | completed | 01-06 |
 
 ## Key files affected
 

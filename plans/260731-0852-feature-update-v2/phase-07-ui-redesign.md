@@ -1,6 +1,6 @@
 # Phase 07 — Full UI/UX Redesign
 
-**Effort:** 10h | **Priority:** P2 | **Status:** pending  
+**Effort:** 10h | **Priority:** P2 | **Status:** completed  
 **Depends on:** Phase 01–06 (all features must exist before redesigning around them)  
 **Blocks:** nothing (final phase)
 
@@ -286,18 +286,18 @@ Add to `globals.css`:
 
 ## Verification checklist
 
-- [ ] Landing page hero renders with gradient + blobs
-- [ ] Lesson cards have hover effect + glow
-- [ ] 7 tabs visible and scrollable on mobile (375px viewport)
-- [ ] Vocabulary cards show IPA in mono font (English) / Pinyin (Chinese)
-- [ ] Summary tab renders properly
-- [ ] Writing practice tab animations work
-- [ ] Quiz tab options are clear and show correct/wrong state
-- [ ] Grammar tab theme badge renders
-- [ ] No layout overflow on mobile
-- [ ] Dark mode is consistent (no white flashes)
-- [ ] `npx tsc --noEmit` passes
-- [ ] Lighthouse score maintained (no regression)
+- [x] Landing page hero renders with gradient + blobs
+- [x] Lesson cards have hover effect + glow
+- [x] 7 tabs visible and scrollable on mobile (375px viewport)
+- [x] Vocabulary cards show IPA in mono font (English) / Pinyin (Chinese)
+- [x] Summary tab renders properly
+- [x] Writing practice tab animations work
+- [x] Quiz tab options are clear and show correct/wrong state
+- [x] Grammar tab theme badge renders
+- [x] No layout overflow on mobile
+- [x] Dark mode is consistent (no white flashes)
+- [x] `npx tsc --noEmit` passes
+- [x] Lighthouse score maintained (no regression)
 
 ---
 

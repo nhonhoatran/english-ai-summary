@@ -64,17 +64,24 @@ export default async function LessonPage({ params }: LessonPageProps) {
     viMeaning: wp.viMeaning,
   }));
 
+  const isChinese = lesson.targetLanguage === "chinese";
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Back navigation & Actions */}
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-8 relative overflow-hidden">
+      {/* Ambient background glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-80 pointer-events-none -z-10 overflow-hidden">
+        <div className="absolute top-[-20%] left-[30%] w-[450px] h-[250px] bg-blue-600/10 rounded-full blur-[100px]" />
+      </div>
+
+      <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+        {/* Back navigation & Actions Header */}
+        <div className="flex items-center justify-between glass-card px-4 py-3 shadow-md">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-zinc-300 hover:text-white transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back to all lessons
+            <ArrowLeft className="w-4 h-4 text-blue-400" />
+            Back to lessons
           </Link>
           <DeleteLessonButton
             lessonId={lesson.id}
@@ -83,13 +90,20 @@ export default async function LessonPage({ params }: LessonPageProps) {
           />
         </div>
 
-        {/* Lesson Header */}
-        <div className="space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+        {/* Lesson Header Card */}
+        <div className="p-6 glass-card space-y-3 border-zinc-800/80 shadow-xl">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-md bg-zinc-800/90 text-zinc-200 border border-zinc-700/80">
+              {isChinese ? "🇨🇳 Chinese" : "🇺🇸 English"}
+            </span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
             {lesson.title}
           </h1>
+
           {lesson.description && (
-            <p className="text-sm sm:text-base text-zinc-400">
+            <p className="text-sm sm:text-base text-zinc-400 font-normal leading-relaxed">
               {lesson.description}
             </p>
           )}

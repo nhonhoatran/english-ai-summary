@@ -51,83 +51,85 @@ export function LessonTabs({
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-6">
-      <TabsList className="w-full justify-start bg-zinc-900 border border-zinc-800 p-1.5 rounded-xl h-auto gap-2 flex-wrap sm:flex-nowrap">
-        <TabsTrigger
-          value="summary"
-          className="flex-1 sm:flex-none py-2.5 px-4 rounded-lg text-zinc-400 data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-all text-sm font-medium gap-2"
-        >
-          <Brain className="w-4 h-4 text-purple-400" />
-          <span>Summary</span>
-        </TabsTrigger>
+      <div className="relative">
+        <TabsList className="w-full justify-start bg-zinc-900/90 backdrop-blur-md border border-zinc-800/80 p-1.5 rounded-2xl h-auto gap-1.5 flex overflow-x-auto no-scrollbar shadow-xl">
+          <TabsTrigger
+            value="summary"
+            className="flex-shrink-0 py-2.5 px-4 rounded-xl text-zinc-400 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-600/30 transition-all text-xs sm:text-sm font-semibold gap-2 hover:text-zinc-200"
+          >
+            <Brain className="w-4 h-4 text-purple-300" />
+            <span>Summary</span>
+          </TabsTrigger>
 
-        <TabsTrigger
-          value="script"
-          className="flex-1 sm:flex-none py-2.5 px-4 rounded-lg text-zinc-400 data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-all text-sm font-medium gap-2"
-        >
-          <FileText className="w-4 h-4" />
-          <span>Script</span>
-        </TabsTrigger>
+          <TabsTrigger
+            value="script"
+            className="flex-shrink-0 py-2.5 px-4 rounded-xl text-zinc-400 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-600/30 transition-all text-xs sm:text-sm font-semibold gap-2 hover:text-zinc-200"
+          >
+            <FileText className="w-4 h-4 text-blue-300" />
+            <span>Script</span>
+          </TabsTrigger>
 
-        <TabsTrigger
-          value="dialogue"
-          className="flex-1 sm:flex-none py-2.5 px-4 rounded-lg text-zinc-400 data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-all text-sm font-medium gap-2"
-        >
-          <MessageSquare className="w-4 h-4 text-blue-400" />
-          <span>Dialogue</span>
-        </TabsTrigger>
+          <TabsTrigger
+            value="dialogue"
+            className="flex-shrink-0 py-2.5 px-4 rounded-xl text-zinc-400 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-600/30 transition-all text-xs sm:text-sm font-semibold gap-2 hover:text-zinc-200"
+          >
+            <MessageSquare className="w-4 h-4 text-sky-300" />
+            <span>Dialogue</span>
+          </TabsTrigger>
 
-        <TabsTrigger
-          value="grammar"
-          className="flex-1 sm:flex-none py-2.5 px-4 rounded-lg text-zinc-400 data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-all text-sm font-medium gap-2"
-        >
-          <BookOpen className="w-4 h-4" />
-          <span>Grammar</span>
-        </TabsTrigger>
+          <TabsTrigger
+            value="grammar"
+            className="flex-shrink-0 py-2.5 px-4 rounded-xl text-zinc-400 data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-indigo-600/30 transition-all text-xs sm:text-sm font-semibold gap-2 hover:text-zinc-200"
+          >
+            <BookOpen className="w-4 h-4 text-indigo-300" />
+            <span>Grammar</span>
+          </TabsTrigger>
 
-        <TabsTrigger
-          value="quiz"
-          className="flex-1 sm:flex-none py-2.5 px-4 rounded-lg text-zinc-400 data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-all text-sm font-medium gap-2"
-        >
-          <HelpCircle className="w-4 h-4" />
-          <span>Quiz</span>
-        </TabsTrigger>
+          <TabsTrigger
+            value="quiz"
+            className="flex-shrink-0 py-2.5 px-4 rounded-xl text-zinc-400 data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-600/30 transition-all text-xs sm:text-sm font-semibold gap-2 hover:text-zinc-200"
+          >
+            <HelpCircle className="w-4 h-4 text-amber-300" />
+            <span>Quiz</span>
+          </TabsTrigger>
 
-        <TabsTrigger
-          value="vocab"
-          className="flex-1 sm:flex-none py-2.5 px-4 rounded-lg text-zinc-400 data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-all text-sm font-medium gap-2"
-        >
-          <BookMarked className="w-4 h-4" />
-          <span>Vocabulary</span>
-        </TabsTrigger>
+          <TabsTrigger
+            value="vocab"
+            className="flex-shrink-0 py-2.5 px-4 rounded-xl text-zinc-400 data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-600/30 transition-all text-xs sm:text-sm font-semibold gap-2 hover:text-zinc-200"
+          >
+            <BookMarked className="w-4 h-4 text-emerald-300" />
+            <span>Vocabulary</span>
+          </TabsTrigger>
 
-        <TabsTrigger
-          value="writing"
-          className="flex-1 sm:flex-none py-2.5 px-4 rounded-lg text-zinc-400 data-[state=active]:bg-zinc-800 data-[state=active]:text-white transition-all text-sm font-medium gap-2"
-        >
-          <PenLine className="w-4 h-4 text-emerald-400" />
-          <span>Practice</span>
-        </TabsTrigger>
-      </TabsList>
+          <TabsTrigger
+            value="writing"
+            className="flex-shrink-0 py-2.5 px-4 rounded-xl text-zinc-400 data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-teal-600/30 transition-all text-xs sm:text-sm font-semibold gap-2 hover:text-zinc-200"
+          >
+            <PenLine className="w-4 h-4 text-teal-300" />
+            <span>Practice</span>
+          </TabsTrigger>
+        </TabsList>
+      </div>
 
-      <TabsContent value="summary" className="mt-4 focus-visible:outline-none">
+      <TabsContent value="summary" className="mt-4 focus-visible:outline-none animate-scale-in">
         {summaryTab}
       </TabsContent>
-      <TabsContent value="script" className="mt-4 focus-visible:outline-none">
+      <TabsContent value="script" className="mt-4 focus-visible:outline-none animate-scale-in">
         {scriptTab}
       </TabsContent>
-      <TabsContent value="dialogue" className="mt-4 focus-visible:outline-none">
+      <TabsContent value="dialogue" className="mt-4 focus-visible:outline-none animate-scale-in">
         {dialogueTab}
       </TabsContent>
-      <TabsContent value="grammar" className="mt-4 focus-visible:outline-none">
+      <TabsContent value="grammar" className="mt-4 focus-visible:outline-none animate-scale-in">
         {grammarTab}
       </TabsContent>
-      <TabsContent value="quiz" className="mt-4 focus-visible:outline-none">
+      <TabsContent value="quiz" className="mt-4 focus-visible:outline-none animate-scale-in">
         {quizTab}
       </TabsContent>
-      <TabsContent value="vocab" className="mt-4 focus-visible:outline-none">
+      <TabsContent value="vocab" className="mt-4 focus-visible:outline-none animate-scale-in">
         {vocabTab}
       </TabsContent>
-      <TabsContent value="writing" className="mt-4 focus-visible:outline-none">
+      <TabsContent value="writing" className="mt-4 focus-visible:outline-none animate-scale-in">
         {writingTab}
       </TabsContent>
     </Tabs>

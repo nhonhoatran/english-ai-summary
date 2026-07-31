@@ -70,16 +70,16 @@ export function TabVocabulary({ items, targetLanguage = "english" }: TabVocabula
         return (
           <div
             key={item.id}
-            className="p-5 rounded-xl bg-zinc-900/70 border border-zinc-800/80 space-y-3 flex flex-col sm:flex-row sm:items-start justify-between gap-4"
+            className="p-5 glass-card glass-card-hover space-y-3 flex flex-col sm:flex-row sm:items-start justify-between gap-4 shadow-lg"
           >
             <div className="space-y-2 flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h4 className="text-lg font-bold text-white tracking-wide">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h4 className="text-lg font-extrabold text-white tracking-wide">
                   {item.term}
                 </h4>
                 {item.ipa && (
                   <span
-                    className="text-sm text-zinc-400 font-mono bg-zinc-950/80 px-2 py-0.5 rounded border border-zinc-800/80"
+                    className="text-xs text-blue-300 font-mono bg-blue-950/50 px-2.5 py-1 rounded-lg border border-blue-800/60 shadow-inner"
                     title={targetLanguage === "chinese" ? "Pinyin" : "IPA"}
                   >
                     {item.ipa}
@@ -90,9 +90,9 @@ export function TabVocabulary({ items, targetLanguage = "english" }: TabVocabula
                 {item.meaning}
               </p>
               {item.example && (
-                <p className="text-xs text-zinc-400 italic bg-zinc-950/60 p-3 rounded-lg border border-zinc-800/60">
+                <blockquote className="text-xs text-zinc-400 italic bg-zinc-950/70 p-3 rounded-xl border-l-2 border-blue-500/60 border-t border-r border-b border-zinc-800/80 shadow-inner">
                   &ldquo;{item.example}&rdquo;
-                </p>
+                </blockquote>
               )}
             </div>
 
@@ -104,8 +104,8 @@ export function TabVocabulary({ items, targetLanguage = "english" }: TabVocabula
                 variant={isSaved ? "outline" : "default"}
                 className={
                   isSaved
-                    ? "border-emerald-500/40 text-emerald-400 bg-emerald-950/20 hover:bg-emerald-950/30"
-                    : "bg-blue-600 hover:bg-blue-500 text-white"
+                    ? "border-emerald-500/40 text-emerald-400 bg-emerald-950/30 hover:bg-emerald-950/40 shadow-inner"
+                    : "bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/20"
                 }
               >
                 {isCurrentlySaving ? (

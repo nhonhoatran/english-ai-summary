@@ -64,12 +64,14 @@ export function TabQuiz({ questions }: TabQuizProps) {
   return (
     <div className="space-y-6">
       {/* Quiz Controls & Score Bar */}
-      <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 flex flex-wrap items-center justify-between gap-4">
+      <div className="p-5 glass-card shadow-xl flex flex-wrap items-center justify-between gap-4 border-zinc-800/80">
         <div>
-          <h3 className="font-semibold text-white">Interactive Quiz</h3>
-          <p className="text-xs text-zinc-400">
+          <h3 className="font-extrabold text-base text-white flex items-center gap-2">
+            <span>Interactive Quiz</span>
+          </h3>
+          <p className="text-xs text-zinc-400 font-medium mt-0.5">
             {isChecked
-              ? `Score: ${correctCount} / ${totalQuestions} (${Math.round(
+              ? `Final Score: ${correctCount} / ${totalQuestions} (${Math.round(
                   (correctCount / totalQuestions) * 100
                 )}%)`
               : `${answeredCount} of ${totalQuestions} answered`}
@@ -82,7 +84,7 @@ export function TabQuiz({ questions }: TabQuizProps) {
               onClick={handleCheck}
               disabled={answeredCount === 0}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-500 text-white"
+              className="bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-md shadow-blue-600/20"
             >
               <Check className="w-4 h-4 mr-1.5" />
               Check Answers
@@ -93,7 +95,7 @@ export function TabQuiz({ questions }: TabQuizProps) {
             onClick={handleShowAnswers}
             variant="outline"
             size="sm"
-            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+            className="border-zinc-700/80 text-zinc-300 hover:bg-zinc-800"
           >
             <Eye className="w-4 h-4 mr-1.5" />
             Show Answers
@@ -104,7 +106,7 @@ export function TabQuiz({ questions }: TabQuizProps) {
               onClick={handleReset}
               variant="outline"
               size="sm"
-              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              className="border-zinc-700/80 text-zinc-300 hover:bg-zinc-800"
             >
               <RotateCcw className="w-4 h-4 mr-1.5" />
               Reset Quiz
@@ -122,22 +124,24 @@ export function TabQuiz({ questions }: TabQuizProps) {
           return (
             <div
               key={q.id}
-              className="p-5 rounded-xl bg-zinc-900/70 border border-zinc-800/80 space-y-4"
+              className="p-5 glass-card glass-card-hover space-y-4 shadow-lg"
             >
               <div className="flex items-start justify-between gap-3">
-                <h4 className="text-base font-medium text-zinc-100 flex items-start gap-2">
-                  <span className="text-blue-400 font-bold">{q.orderIndex}.</span>
-                  <span>{q.prompt}</span>
+                <h4 className="text-base font-semibold text-zinc-100 flex items-start gap-2.5">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-extrabold shrink-0">
+                    {q.orderIndex}
+                  </span>
+                  <span className="leading-snug pt-0.5">{q.prompt}</span>
                 </h4>
 
                 {isChecked && (
                   <div className="shrink-0">
                     {isCorrect ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full shadow-inner">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Correct
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-full">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-3 py-1 rounded-full shadow-inner">
                         <XCircle className="w-3.5 h-3.5" /> Incorrect
                       </span>
                     )}
@@ -146,41 +150,41 @@ export function TabQuiz({ questions }: TabQuizProps) {
               </div>
 
               {/* Options */}
-              <div className="grid gap-2.5 pl-4">
+              <div className="grid gap-2.5 pl-2">
                 {q.options.map((opt, idx) => {
                   const label = optionLabels[idx] ?? `${idx + 1}`;
                   const isThisSelected = selectedIdx === idx;
                   const isThisCorrectOption = idx === q.correctIndex;
 
                   let optionStyle =
-                    "border-zinc-800 bg-zinc-950/60 text-zinc-300 hover:bg-zinc-800/60 hover:border-zinc-700";
+                    "border-zinc-800/80 bg-zinc-950/60 text-zinc-300 hover:bg-zinc-800/60 hover:border-zinc-700";
 
                   if (isChecked) {
                     if (isThisSelected && isThisCorrectOption) {
                       optionStyle =
-                        "border-emerald-500/50 bg-emerald-950/30 text-emerald-300 font-medium";
+                        "border-emerald-500/60 bg-emerald-950/40 text-emerald-200 font-semibold shadow-inner";
                     } else if (isThisSelected && !isThisCorrectOption) {
                       optionStyle =
-                        "border-rose-500/50 bg-rose-950/30 text-rose-300 line-through";
+                        "border-rose-500/60 bg-rose-950/40 text-rose-300 line-through opacity-80";
                     } else if (isRevealed && isThisCorrectOption) {
                       optionStyle =
-                        "border-emerald-500/40 bg-emerald-950/20 text-emerald-300 font-medium";
+                        "border-emerald-500/50 bg-emerald-950/30 text-emerald-300 font-semibold";
                     }
                   } else if (isRevealed) {
                     if (isThisCorrectOption) {
                       optionStyle =
-                        "border-emerald-500/50 bg-emerald-950/30 text-emerald-300 font-medium";
+                        "border-emerald-500/60 bg-emerald-950/40 text-emerald-300 font-semibold";
                     }
                   } else if (isThisSelected) {
                     optionStyle =
-                      "border-blue-500/50 bg-blue-950/40 text-blue-200 font-medium";
+                      "border-blue-500/60 bg-blue-950/50 text-blue-100 font-semibold shadow-md shadow-blue-500/10";
                   }
 
                   return (
                     <label
                       key={idx}
                       onClick={() => handleSelect(q.id, idx)}
-                      className={`p-3 rounded-lg border flex items-center gap-3 transition-all cursor-pointer select-none text-sm ${optionStyle}`}
+                      className={`p-3.5 rounded-xl border flex items-center gap-3 transition-all cursor-pointer select-none text-sm ${optionStyle}`}
                     >
                       <input
                         type="radio"
@@ -190,7 +194,11 @@ export function TabQuiz({ questions }: TabQuizProps) {
                         disabled={isChecked || isRevealed}
                         className="sr-only"
                       />
-                      <span className="w-6 h-6 rounded-md bg-zinc-800/80 border border-zinc-700 flex items-center justify-center text-xs font-mono text-zinc-400 font-bold uppercase shrink-0">
+                      <span className={`w-6 h-6 rounded-lg border flex items-center justify-center text-xs font-mono font-bold uppercase shrink-0 transition-colors ${
+                        isThisSelected
+                          ? "bg-blue-600 border-blue-500 text-white shadow-sm"
+                          : "bg-zinc-800/80 border-zinc-700/80 text-zinc-400"
+                      }`}>
                         {label}
                       </span>
                       <span className="flex-1">{opt}</span>
