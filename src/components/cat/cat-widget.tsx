@@ -29,32 +29,45 @@ export function CatWidget() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // If on login page, do not render cat widget at all
+  const isLoginPage = pathname === "/login";
+
   const fetchCatState = useCallback(async () => {
+    if (isLoginPage) {
+      setLoading(false);
+      setCatData(null);
+      return;
+    }
+
     try {
-      const isOnLessonPage = pathname?.includes("/lesson/") ?? false;
+      const isOnLessonPage = pathname?.includes("/lessons/") ?? false;
       const res = await fetch(`/api/cat?isOnLessonPage=${isOnLessonPage}`);
 
       if (res.ok) {
         const data: CatApiResponse = await res.json();
         setCatData(data);
+      } else {
+        // User not authenticated or error -> hide cat
+        setCatData(null);
       }
     } catch (err) {
       console.error("Error fetching cat state:", err);
+      setCatData(null);
     } finally {
       setLoading(false);
     }
-  }, [pathname]);
+  }, [pathname, isLoginPage]);
 
   useEffect(() => {
     fetchCatState();
 
-    // Refetch every 60 seconds
     const interval = setInterval(fetchCatState, 60000);
     return () => clearInterval(interval);
   }, [fetchCatState]);
 
-  if (loading && !catData) return null;
-  if (!catData) return null;
+  if (isLoginPage || (loading && !catData) || !catData) {
+    return null;
+  }
 
   const { catState, mood } = catData;
   const badge = MOOD_BADGES[mood];
