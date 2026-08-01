@@ -58,6 +58,7 @@ docker compose up -d --build
 **Image build notes:**
 - Env validation is skipped at build time (`SKIP_ENV_VALIDATION=1` in the builder stage) because Docker builds have no secrets; `src/lib/env.ts` still validates strictly at runtime.
 - Runtime dependencies are installed in a dedicated `prod-deps` stage with `nodeLinker: hoisted`, producing a flat `node_modules` that can be copied between stages. pnpm's default symlinked layout keeps transitive packages inside `node_modules/.pnpm` and cannot be copied per-package.
+- Production builds run `next build --webpack`. Turbopack emits external modules under content-hashed names derived from the build-time `node_modules` layout (e.g. `@prisma/client-4e554655281e05c3`); when the runtime layout differs the module cannot be resolved and every Prisma route fails with `Failed to load external module`. See [vercel/next.js#87737](https://github.com/vercel/next.js/issues/87737). Webpack emits a plain `require("@prisma/client")`, which resolves in any layout.
 
 ---
 
