@@ -2,7 +2,7 @@
 FROM node:24-alpine AS deps
 WORKDIR /app
 RUN corepack enable pnpm
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml* ./
 COPY prisma ./prisma
 RUN pnpm install --frozen-lockfile
 
