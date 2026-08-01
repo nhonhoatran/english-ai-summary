@@ -53,7 +53,11 @@ docker compose up -d --build
 
 **Boot Process:**
 - Container starts up and runs `npx prisma migrate deploy` automatically applying database migrations to your PostgreSQL database.
-- Next.js standalone server starts on port `3000`.
+- Custom `server.js` (Next.js request handler + Socket.io) starts on port `3000`.
+
+**Image build notes:**
+- Env validation is skipped at build time (`SKIP_ENV_VALIDATION=1` in the builder stage) because Docker builds have no secrets; `src/lib/env.ts` still validates strictly at runtime.
+- Runtime dependencies are installed in a dedicated `prod-deps` stage with `nodeLinker: hoisted`, producing a flat `node_modules` that can be copied between stages. pnpm's default symlinked layout keeps transitive packages inside `node_modules/.pnpm` and cannot be copied per-package.
 
 ---
 
