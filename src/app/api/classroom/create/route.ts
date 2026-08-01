@@ -10,24 +10,19 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const { lessonId } = body;
 
-    if (!lessonId) {
-      return NextResponse.json(
-        { error: "Thiếu thông tin bài học (lessonId)." },
-        { status: 400 }
-      );
-    }
-
-    // Verify lesson exists
-    const lesson = await db.lesson.findUnique({
-      where: { id: lessonId },
-      select: { id: true },
-    });
-
-    if (!lesson) {
-      return NextResponse.json(
-        { error: "Bài học không tồn tại." },
-        { status: 404 }
-      );
+    let validLessonId: string | null = null;
+    if (lessonId) {
+      const lesson = await db.lesson.findUnique({
+        where: { id: lessonId },
+        select: { id: true },
+      });
+      if (!lesson) {
+        return NextResponse.json(
+          { error: "Bài học không tồn tại." },
+          { status: 404 }
+        );
+      }
+      validLessonId = lesson.id;
     }
 
     const code = await generateUniqueClassroomCode();
@@ -36,7 +31,7 @@ export async function POST(req: Request) {
       data: {
         code,
         hostUserId: session.userId,
-        lessonId,
+        lessonId: validLessonId,
         isActive: true,
         currentTab: "summary",
         currentSegment: 0,

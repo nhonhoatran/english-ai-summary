@@ -8,13 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SlidersHorizontal, ChevronDown, ChevronUp } from "lucide-react";
 
-export function AddLessonForm() {
+interface AddLessonFormProps {
+  classroomCode?: string;
+  onLessonCreated?: () => void;
+}
+
+export function AddLessonForm({ classroomCode, onLessonCreated }: AddLessonFormProps = {}) {
   const [url, setUrl] = useState("");
   const [targetLanguage, setTargetLanguage] = useState<"english" | "chinese">("english");
   const [quizCount, setQuizCount] = useState<number>(5);
   const [vocabCount, setVocabCount] = useState<number>(10);
   const [grammarCount, setGrammarCount] = useState<number>(4);
   const [dialogueCount, setDialogueCount] = useState<number>(20);
+  const [writingPromptCount, setWritingPromptCount] = useState<number>(8);
   const [showOptions, setShowOptions] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
@@ -33,13 +39,18 @@ export function AddLessonForm() {
 
     startTransition(async () => {
       try {
-        const res = await ingestLessonAction(trimmed, {
-          quizCount,
-          vocabCount,
-          grammarCount,
-          dialogueCount,
-          targetLanguage,
-        });
+        const res = await ingestLessonAction(
+          trimmed,
+          {
+            quizCount,
+            vocabCount,
+            grammarCount,
+            dialogueCount,
+            writingPromptCount,
+            targetLanguage,
+          },
+          classroomCode
+        );
 
         if (!res.success) {
           setError(res.error);
@@ -47,7 +58,13 @@ export function AddLessonForm() {
         }
 
         setUrl("");
-        router.push(`/lessons/${res.lessonId}`);
+        if (onLessonCreated) {
+          onLessonCreated();
+        } else if (classroomCode) {
+          router.refresh();
+        } else {
+          router.push(`/lessons/${res.lessonId}`);
+        }
       } catch (err: unknown) {
         setError(
           err instanceof Error ? err.message : "An unexpected error occurred."
@@ -105,7 +122,7 @@ export function AddLessonForm() {
             className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-blue-400 font-medium transition-colors"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Tùy chỉnh số lượng gen (Quiz / Từ vựng / Ngữ pháp)</span>
+            <span>Tùy chỉnh số lượng gen (Quiz / Vocab / Grammar / Practice / Dialogue)</span>
             {showOptions ? (
               <ChevronUp className="w-3.5 h-3.5" />
             ) : (
@@ -116,7 +133,7 @@ export function AddLessonForm() {
 
         {/* Collapsible custom generation options */}
         {showOptions && (
-          <div className="p-4 rounded-xl bg-zinc-900/90 border border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+          <div className="p-4 rounded-xl bg-zinc-900/90 border border-zinc-800 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
             <div className="space-y-1.5">
               <label className="block text-zinc-300 font-semibold">
                 📝 Số câu Quiz
@@ -168,7 +185,26 @@ export function AddLessonForm() {
               </select>
             </div>
 
-            <div className="space-y-1.5 sm:col-span-3">
+            <div className="space-y-1.5">
+              <label className="block text-zinc-300 font-semibold">
+                ✍️ Số câu Practice (Luyện viết)
+              </label>
+              <select
+                value={writingPromptCount}
+                onChange={(e) => setWritingPromptCount(Number(e.target.value))}
+                disabled={isPending}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 text-xs"
+              >
+                <option value={5}>5 câu</option>
+                <option value={8}>8 câu (Mặc định)</option>
+                <option value={10}>10 câu</option>
+                <option value={12}>12 câu</option>
+                <option value={15}>15 câu</option>
+                <option value={20}>20 câu</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5 sm:col-span-2">
               <label className="block text-zinc-300 font-semibold">
                 💬 Số lượt thoại (Dialogue)
               </label>

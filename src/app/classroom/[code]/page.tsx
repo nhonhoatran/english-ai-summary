@@ -5,6 +5,8 @@ import { AUTH_COOKIE_NAME, verifySession } from "@/lib/auth/auth-cookie";
 import { env } from "@/lib/env";
 import { ClassroomJoinForm } from "@/components/classroom/classroom-join-form";
 import { ClassroomViewer } from "@/components/classroom/classroom-viewer";
+import { ClassroomAddLesson } from "@/components/classroom/classroom-add-lesson";
+import { ClassroomWaitingLesson } from "@/components/classroom/classroom-waiting-lesson";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -39,7 +41,7 @@ export default async function ClassroomPage({ params }: ClassroomPageProps) {
     },
   });
 
-  if (!classroom || !classroom.lesson) {
+  if (!classroom) {
     notFound();
   }
 
@@ -54,12 +56,14 @@ export default async function ClassroomPage({ params }: ClassroomPageProps) {
           <p className="text-xs text-zinc-400">
             Mã lớp <span className="font-mono font-bold text-rose-400">{formattedCode}</span> đã được Host đóng hoặc không còn hoạt động.
           </p>
-          <Link href={`/lessons/${classroom.lessonId}`}>
-            <Button className="mt-4 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold rounded-xl gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              <span>Quay lại bài học đơn</span>
-            </Button>
-          </Link>
+          {classroom.lessonId && (
+            <Link href={`/lessons/${classroom.lessonId}`}>
+              <Button className="mt-4 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold rounded-xl gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                <span>Quay lại bài học đơn</span>
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     );
@@ -91,6 +95,23 @@ export default async function ClassroomPage({ params }: ClassroomPageProps) {
   const hostName = classroom.host?.phone
     ? `Host (${classroom.host.phone.slice(-4)})`
     : "Host";
+
+  // If classroom doesn't have a lesson attached yet
+  if (!classroom.lesson) {
+    return (
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-8 relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-80 pointer-events-none -z-10 overflow-hidden">
+          <div className="absolute top-[-20%] left-[30%] w-[450px] h-[250px] bg-emerald-600/10 rounded-full blur-[100px]" />
+        </div>
+
+        {isHost ? (
+          <ClassroomAddLesson code={classroom.code} />
+        ) : (
+          <ClassroomWaitingLesson code={classroom.code} hostName={hostName} />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-8 relative overflow-hidden">
