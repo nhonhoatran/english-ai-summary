@@ -13,6 +13,12 @@ RUN corepack enable pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Build-time only: no real secrets are available while building the image.
+# Env validation is skipped here and enforced again at runtime (see src/lib/env.ts).
+ENV SKIP_ENV_VALIDATION=1
+# Placeholder so Prisma Client can be constructed during "collect page data".
+# Never used to connect; the real DATABASE_URL is injected at runtime.
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
 RUN pnpm prisma generate
 RUN pnpm build
 
