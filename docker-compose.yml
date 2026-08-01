@@ -11,6 +11,15 @@ services:
       - "host.docker.internal:host-gateway"
     env_file:
       - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - APP_PASSWORD=${APP_PASSWORD}
+      - AUTH_SECRET=${AUTH_SECRET}
+      - CRON_SECRET=${CRON_SECRET}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.6-flash}
+      - PORT=${PORT:-3000}
+      - HOSTNAME=${HOSTNAME:-0.0.0.0}
     # Bật dòng này nếu muốn ứng dụng đợi Postgres container sẵn sàng trước khi chạy migration:
     # depends_on:
     #   db:
