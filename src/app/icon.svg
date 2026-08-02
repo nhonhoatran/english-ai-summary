@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Lớp Học Online">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#34d399" />
+      <stop offset="1" stop-color="#0d9488" />
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="14" fill="url(#tile)" />
+
+  <!-- Open book: the app is a language lesson built from a video -->
+  <path
+    fill="#fff"
+    d="M32 21c-4.5-4-13-5.5-19.5-4.8a2 2 0 0 0-2 2V44.5a2 2 0 0 0 2 2c6.5-.7 15 .5 19.5 4 4.5-3.5 13-4.7 19.5-4a2 2 0 0 0 2-2V18.2a2 2 0 0 0-2-2C45 15.5 36.5 17 32 21Z"
+  />
+  <rect x="30.6" y="21" width="2.8" height="29.5" rx="1.4" fill="url(#tile)" />
+
+  <!-- Play badge: lessons are generated from YouTube videos -->
+  <circle cx="46.5" cy="45" r="9.5" fill="#0f172a" />
+  <path fill="#fff" d="M43.6 40.6l7.4 4.1a.4.4 0 0 1 0 .7l-7.4 4.1a.4.4 0 0 1-.6-.35v-8.2a.4.4 0 0 1 .6-.35Z" />
+</svg>
