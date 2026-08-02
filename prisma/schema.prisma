@@ -65,15 +65,24 @@ model Lesson {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
-  segments       TranscriptSegment[]
-  dialogueLines  DialogueLine[]
-  grammarPoints  GrammarPoint[]
-  quizQuestions  QuizQuestion[]
-  vocabItems     VocabItem[]
-  writingPrompts WritingPrompt[]
-  classrooms     Classroom[]
+  // A lesson either belongs to a classroom (classroomId set) or is a solo lesson (null).
+  classroomId    String?
+  classroom      Classroom?      @relation("ClassroomLessons", fields: [classroomId], references: [id], onDelete: Cascade)
+  classroomOrder Int             @default(0) // display order inside the classroom
 
-  @@unique([userId, videoId])
+  segments        TranscriptSegment[]
+  dialogueLines   DialogueLine[]
+  grammarPoints   GrammarPoint[]
+  quizQuestions   QuizQuestion[]
+  vocabItems      VocabItem[]
+  writingPrompts  WritingPrompt[]
+  activeIn        Classroom[]         @relation("ClassroomCurrentLesson")
+  practiceAttempts PracticeAttempt[]
+
+  // NOT unique on [userId, videoId]: the same host may reuse one video across
+  // several classrooms. Idempotency is scoped by classroomId in ingest-lesson.ts.
+  @@index([userId, videoId])
+  @@index([classroomId, classroomOrder])
   @@index([userId, createdAt])
 }
 
@@ -125,12 +134,13 @@ model QuizQuestion {
 }
 
 model WritingPrompt {
-  id         String @id @default(cuid())
+  id         String            @id @default(cuid())
   lessonId   String
   orderIndex Int
   viMeaning  String
   enAnswer   String
-  lesson     Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lesson     Lesson            @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  attempts   PracticeAttempt[]
 
   @@unique([lessonId, orderIndex])
 }
@@ -150,16 +160,18 @@ model VocabItem {
 }
 
 model User {
-  id         String      @id @default(cuid())
-  phone      String      @unique
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  flashcards Flashcard[]
-  lessons    Lesson[]
-  userPoints UserPoint[]
-  userStreak UserStreak?
-  catState   CatState?
-  classrooms Classroom[]  @relation("HostedClassrooms")
+  id               String            @id @default(cuid())
+  phone            String            @unique
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  flashcards       Flashcard[]
+  lessons          Lesson[]
+  userPoints       UserPoint[]
+  userStreak       UserStreak?
+  catState         CatState?
+  classrooms       Classroom[]       @relation("HostedClassrooms")
+  classMemberships ClassMember[]
+  practiceAttempts PracticeAttempt[]
 }
 
 model Flashcard {
@@ -244,31 +256,75 @@ model CatState {
 }
 
 model Classroom {
-  id             String        @id @default(cuid())
-  code           String        @unique
-  hostUserId     String
-  host           User          @relation("HostedClassrooms", fields: [hostUserId], references: [id])
-  lessonId       String?
-  lesson         Lesson?       @relation(fields: [lessonId], references: [id])
-  isActive       Boolean       @default(true)
+  id          String  @id @default(cuid())
+  code        String  @unique
+  name        String? // human-friendly class name, falls back to the code
+  hostUserId  String
+  host        User    @relation("HostedClassrooms", fields: [hostUserId], references: [id], onDelete: Cascade)
+
+  // All lessons owned by this classroom, plus the one the class is currently on.
+  lessons         Lesson[] @relation("ClassroomLessons")
+  currentLessonId String?
+  currentLesson   Lesson?  @relation("ClassroomCurrentLesson", fields: [currentLessonId], references: [id], onDelete: SetNull)
+
+  isActive       Boolean           @default(true)
   currentTab     String?
   currentSegment Int?
   lastSyncAt     DateTime?
-  createdAt      DateTime      @default(now())
+  createdAt      DateTime          @default(now())
   members        ClassMember[]
+  attempts       PracticeAttempt[]
 
   @@index([code, isActive])
+  @@index([hostUserId, createdAt])
 }
 
 model ClassMember {
   id          String    @id @default(cuid())
   classroomId String
   classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  userId      String? // every route is auth-gated, so new members always carry a userId
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   displayName String
   phone       String?
   joinedAt    DateTime  @default(now())
   lastSeenAt  DateTime  @default(now())
 
   @@unique([classroomId, displayName])
+  @@unique([classroomId, userId])
   @@index([classroomId, lastSeenAt])
+}
+
+/// One row per (writing prompt, learner) holding their latest graded answer.
+/// Doubles as the practice progress store: the learner resumes at the first
+/// prompt without a row, so no separate progress table is needed.
+model PracticeAttempt {
+  id          String        @id @default(cuid())
+  lessonId    String
+  lesson      Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  promptId    String
+  prompt      WritingPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  promptIndex Int // mirrors WritingPrompt.orderIndex, denormalized for cheap ordering
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Set when the attempt happened inside a classroom; null for solo practice.
+  classroomId String?
+  classroom   Classroom? @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  displayName String // denormalized so the feed/leaderboard need no extra join
+
+  answer     String
+  isCorrect  Boolean
+  score      Int
+  feedback   String?
+  suggestion String?
+  attemptNo  Int      @default(1) // how many times this prompt has been answered
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([promptId, userId])
+  @@index([lessonId, userId])
+  @@index([classroomId, lessonId, promptIndex])
+  @@index([classroomId, updatedAt])
 }
