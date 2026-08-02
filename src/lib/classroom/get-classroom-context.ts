@@ -26,6 +26,34 @@ export interface ClassroomContext {
 }
 
 /**
+ * Takes ownership of a pre-userId membership row for the current user.
+ *
+ * Returns the row only when this user now owns it; a row already claimed by
+ * somebody else is ignored rather than impersonated.
+ */
+async function claimLegacyMembership(
+  memberId: string,
+  classroomId: string,
+  userId: string
+): Promise<{ id: string; displayName: string } | null> {
+  try {
+    const claimed = await db.classMember.updateMany({
+      where: { id: memberId, classroomId, userId: null },
+      data: { userId },
+    });
+    if (claimed.count === 0) return null;
+  } catch {
+    // Unique (classroomId, userId) race: this user already has a row here.
+    return null;
+  }
+
+  return db.classMember.findUnique({
+    where: { id: memberId },
+    select: { id: true, displayName: true },
+  });
+}
+
+/**
  * Single source of truth for "who is looking at this classroom".
  *
  * Membership is resolved by userId first (every route is auth-gated, so the
@@ -66,13 +94,17 @@ export async function getClassroomContext(
       })
     : null;
 
-  if (!member) {
+  // Legacy fallback for memberships created before the userId column existed.
+  //
+  // This used to resolve a membership from the cookie value alone, so whoever
+  // held the cookie inherited that identity — logging out and signing in with
+  // another phone in the same browser rendered the previous person's name.
+  // Only unclaimed rows are adoptable now, and adopting claims the row for this
+  // user so it can never be handed to a second account.
+  if (!member && userId) {
     const legacyMemberId = cookieStore.get(memberCookieName(formattedCode))?.value;
     if (legacyMemberId) {
-      member = await db.classMember.findFirst({
-        where: { id: legacyMemberId, classroomId: classroom.id },
-        select: { id: true, displayName: true },
-      });
+      member = await claimLegacyMembership(legacyMemberId, classroom.id, userId);
     }
   }
 
