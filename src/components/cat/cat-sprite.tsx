@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { CatMood } from "@/lib/cat/compute-cat-mood";
 import { CatAnimatedSvg } from "./cat-animated-svg";
 import {
@@ -30,6 +30,38 @@ interface Particle {
   size?: string;
 }
 
+/** Sound, particle burst and duration for each cat action. */
+const ACTION_ANIMATIONS = {
+  feed: {
+    play: playCatMunch,
+    spins: false,
+    texts: ["🍲", "🍖", "Ngon quá!", "+20 🍖"],
+    color: "#f59e0b",
+    durationMs: 1200,
+  },
+  bath: {
+    play: playCatSplash,
+    spins: false,
+    texts: ["🧼", "🫧", "Sạch rồi!", "+25 🧼"],
+    color: "#0284c7",
+    durationMs: 1200,
+  },
+  play: {
+    play: () => playCatMeow("cute"),
+    spins: true,
+    texts: ["🧶", "⭐", "Vui quá!", "+15 ❤️"],
+    color: "#6366f1",
+    durationMs: 1200,
+  },
+  pet: {
+    play: playCatPurr,
+    spins: false,
+    texts: ["❤️", "💕", "Purr~", "+10 ❤️"],
+    color: "#ec4899",
+    durationMs: 1000,
+  },
+} as const;
+
 export function CatSprite({
   mood,
   size = 140,
@@ -38,80 +70,59 @@ export function CatSprite({
   interactive = true,
 }: CatSpriteProps) {
   const [particles, setParticles] = useState<Particle[]>([]);
-  const [isSquishing, setIsSquishing] = useState(false);
-  const [isSpinning, setIsSpinning] = useState(false);
+  const [isClickSquishing, setIsClickSquishing] = useState(false);
   const [isPettingActive, setIsPettingActive] = useState(false);
 
   const lastPetTimeRef = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Handle action animations and sound effects
+  const animation = actionState ? ACTION_ANIMATIONS[actionState] : null;
+
+  // Squish/spin follow the action prop directly. They used to be separate state
+  // set inside the effect, which duplicated a value the prop already carries —
+  // the parent clears actionState via onActionComplete on the same timer.
+  const isSquishing = isClickSquishing || (!!animation && !animation.spins);
+  const isSpinning = !!animation && animation.spins;
+
+  // Declared before the effect below so the effect can depend on it honestly.
+  const spawnActionParticles = useCallback(
+    (texts: readonly string[], color: string) => {
+      const newParticles: Particle[] = texts.map((text, idx) => ({
+        id: Date.now() + idx,
+        x: size / 2 + (Math.random() * 40 - 20),
+        y: size / 3 + (Math.random() * 20 - 10) - idx * 15,
+        text,
+        color,
+        size: "text-sm sm:text-base font-extrabold",
+      }));
+
+      setParticles((prev) => [...prev, ...newParticles]);
+
+      setTimeout(() => {
+        setParticles((prev) =>
+          prev.filter((p) => !newParticles.some((np) => np.id === p.id))
+        );
+      }, 1200);
+    },
+    [size]
+  );
+
+  // Fires the sound + particle burst when the parent triggers an action.
+  //
+  // The particle spawn is a one-shot animation kicked off by a prop change, not
+  // derived state — there is nothing to compute it from, since each burst has
+  // randomised positions and removes itself on a timer. Squish/spin, which
+  // *were* derivable, have already been lifted out of this effect above.
   useEffect(() => {
-    if (!actionState) return;
+    if (!animation) return;
 
-    if (actionState === "feed") {
-      playCatMunch();
-      setIsSquishing(true);
-      spawnActionParticles(["🍲", "🍖", "Ngon quá!", "+20 🍖"], "#f59e0b");
-      const timer = setTimeout(() => {
-        setIsSquishing(false);
-        if (onActionComplete) onActionComplete();
-      }, 1200);
-      return () => clearTimeout(timer);
-    }
+    animation.play();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- imperative animation trigger, see note above
+    spawnActionParticles(animation.texts, animation.color);
 
-    if (actionState === "bath") {
-      playCatSplash();
-      setIsSquishing(true);
-      spawnActionParticles(["🧼", "🫧", "Sạch rồi!", "+25 🧼"], "#0284c7");
-      const timer = setTimeout(() => {
-        setIsSquishing(false);
-        if (onActionComplete) onActionComplete();
-      }, 1200);
-      return () => clearTimeout(timer);
-    }
-
-    if (actionState === "play") {
-      playCatMeow("cute");
-      setIsSpinning(true);
-      spawnActionParticles(["🧶", "⭐", "Vui quá!", "+15 ❤️"], "#6366f1");
-      const timer = setTimeout(() => {
-        setIsSpinning(false);
-        if (onActionComplete) onActionComplete();
-      }, 1200);
-      return () => clearTimeout(timer);
-    }
-
-    if (actionState === "pet") {
-      playCatPurr();
-      setIsSquishing(true);
-      spawnActionParticles(["❤️", "💕", "Purr~", "+10 ❤️"], "#ec4899");
-      const timer = setTimeout(() => {
-        setIsSquishing(false);
-        if (onActionComplete) onActionComplete();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [actionState]);
-
-  const spawnActionParticles = (texts: string[], color: string) => {
-    const newParticles: Particle[] = texts.map((text, idx) => ({
-      id: Date.now() + idx,
-      x: size / 2 + (Math.random() * 40 - 20),
-      y: size / 3 + (Math.random() * 20 - 10) - idx * 15,
-      text,
-      color,
-      size: "text-sm sm:text-base font-extrabold",
-    }));
-
-    setParticles((prev) => [...prev, ...newParticles]);
-
-    setTimeout(() => {
-      setParticles((prev) =>
-        prev.filter((p) => !newParticles.some((np) => np.id === p.id))
-      );
-    }, 1200);
-  };
+    const timer = setTimeout(() => onActionComplete?.(), animation.durationMs);
+    return () => clearTimeout(timer);
+  }, [animation, spawnActionParticles, onActionComplete]);
 
   // Click on Cat Reaction
   const handleCatClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -137,8 +148,8 @@ export function CatSprite({
       { id: Date.now(), x, y, text, color: "#f43f5e", size: "text-xs font-bold" },
     ]);
 
-    setIsSquishing(true);
-    setTimeout(() => setIsSquishing(false), 300);
+    setIsClickSquishing(true);
+    setTimeout(() => setIsClickSquishing(false), 300);
 
     setTimeout(() => {
       setParticles((prev) => prev.filter((p) => Date.now() - p.id < 1000));

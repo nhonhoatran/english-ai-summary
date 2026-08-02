@@ -34,12 +34,6 @@ export function CatWidget() {
   const isLoginPage = pathname === "/login";
 
   const fetchCatState = useCallback(async () => {
-    if (isLoginPage) {
-      setLoading(false);
-      setCatData(null);
-      return;
-    }
-
     try {
       const isOnLessonPage = pathname?.includes("/lessons/") ?? false;
       const res = await fetch(`/api/cat?isOnLessonPage=${isOnLessonPage}`);
@@ -56,14 +50,22 @@ export function CatWidget() {
     } finally {
       setLoading(false);
     }
-  }, [pathname, isLoginPage]);
+  }, [pathname]);
 
   useEffect(() => {
+    // Skip entirely on the login page — the component renders null there.
+    if (isLoginPage) return;
+
+    // Not hoistable to the server: the cat's mood depends on the current route
+    // (isOnLessonPage), so it has to be re-fetched on every navigation as well
+    // as on the 60s poll. The root layout does not re-render on navigation, so
+    // passing initial data down from the server would freeze the mood.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- route-driven polling, see note above
     fetchCatState();
 
     const interval = setInterval(fetchCatState, 60000);
     return () => clearInterval(interval);
-  }, [fetchCatState]);
+  }, [fetchCatState, isLoginPage]);
 
   if (isLoginPage || (loading && !catData) || !catData) {
     return null;

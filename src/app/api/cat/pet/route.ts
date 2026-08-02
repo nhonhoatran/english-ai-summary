@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getTodayUserPoints, getUserPointsBalance } from "@/lib/points/get-user-points";
 import { getUtcMidnight } from "@/lib/points/award-points";
 import { computeCatMood } from "@/lib/cat/compute-cat-mood";
+import { handleRouteError } from "@/lib/api/handle-route-error";
 
 export async function POST() {
   try {
@@ -67,11 +68,7 @@ export async function POST() {
       remainingPets: MAX_FREE_PETS - newPetCount,
       message: `Vuốt ve mèo thích thú lắm! (Còn ${MAX_FREE_PETS - newPetCount} lượt miễn phí hôm nay)`,
     });
-  } catch (error: any) {
-    if (error?.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    console.error("Error in POST /api/cat/pet:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error: unknown) {
+    return handleRouteError("POST /api/cat/pet", error);
   }
 }

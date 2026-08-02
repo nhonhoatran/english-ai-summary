@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getTodayUserPoints, getUserPointsBalance } from "@/lib/points/get-user-points";
 import { getUtcMidnight } from "@/lib/points/award-points";
 import { computeCatMood } from "@/lib/cat/compute-cat-mood";
+import { handleRouteError } from "@/lib/api/handle-route-error";
 
 export async function GET(request: Request) {
   try {
@@ -61,11 +62,7 @@ export async function GET(request: Request) {
       todayPoints,
       pointsBalance,
     });
-  } catch (error: any) {
-    if (error?.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    console.error("Error in GET /api/cat:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error: unknown) {
+    return handleRouteError("GET /api/cat", error);
   }
 }

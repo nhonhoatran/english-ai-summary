@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { PointSource } from "@prisma/client";
+import { PointSource, Prisma } from "@prisma/client";
 
 export function getUtcMidnight(dateInput: Date = new Date()): Date {
   return new Date(
@@ -14,7 +14,8 @@ export function getUtcMidnight(dateInput: Date = new Date()): Date {
 export interface AwardPointsOptions {
   userId: string;
   source: PointSource;
-  meta?: Record<string, any>;
+  /** Free-form context persisted to UserPoint.meta (a Prisma Json column). */
+  meta?: Prisma.InputJsonObject;
 }
 
 export interface AwardPointsResult {

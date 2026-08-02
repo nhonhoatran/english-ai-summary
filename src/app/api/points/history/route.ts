@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { getUtcMidnight } from "@/lib/points/award-points";
 import { db } from "@/lib/db";
+import { handleRouteError } from "@/lib/api/handle-route-error";
 
 export async function GET() {
   try {
@@ -43,11 +44,7 @@ export async function GET() {
     }
 
     return NextResponse.json({ history });
-  } catch (error: any) {
-    if (error?.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    console.error("Error in GET /api/points/history:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error: unknown) {
+    return handleRouteError("GET /api/points/history", error);
   }
 }

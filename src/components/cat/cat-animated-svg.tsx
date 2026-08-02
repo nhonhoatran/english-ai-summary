@@ -22,7 +22,7 @@ export function CatAnimatedSvg({
   actionState = null,
 }: CatAnimatedSvgProps) {
   const [blink, setBlink] = useState(false);
-  const [mouthOpen, setMouthOpen] = useState(false);
+  const [mouthTick, setMouthTick] = useState(false);
 
   // Random eye blinking
   useEffect(() => {
@@ -33,22 +33,18 @@ export function CatAnimatedSvg({
     return () => clearInterval(interval);
   }, []);
 
-  // Mouth animation during action or meowing
+  // Mouth flaps only while eating or playing. Derived from the prop instead of
+  // being reset with a setState in the effect's else branch.
+  const isMouthAnimating = actionState === "feed" || actionState === "play";
+  const mouthOpen = isMouthAnimating && mouthTick;
+
   useEffect(() => {
-    if (actionState === "feed" || actionState === "play") {
-      const interval = setInterval(() => {
-        setMouthOpen((prev) => !prev);
-      }, 150);
-      return () => clearInterval(interval);
-    } else {
-      setMouthOpen(false);
-    }
-  }, [actionState]);
+    if (!isMouthAnimating) return;
+    const interval = setInterval(() => setMouthTick((prev) => !prev), 150);
+    return () => clearInterval(interval);
+  }, [isMouthAnimating]);
 
   // Colors based on cat theme (Cute Orange Tabby)
-  const catColor = "#ff9e43"; // Orange main body
-  const catDarkColor = "#ee5253"; // Darker stripe/ear inner
-  const bellyColor = "#fff5e6"; // Cream belly & muzzle
   const earInner = "#ffb8b8"; // Soft pink ear inner
 
   return (

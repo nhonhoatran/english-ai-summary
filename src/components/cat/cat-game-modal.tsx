@@ -11,6 +11,7 @@ import {
   toggleCatMute,
   isCatMuted,
 } from "@/lib/cat/cat-audio";
+import { useIsMounted } from "@/lib/react/use-is-mounted";
 
 interface CatGameModalProps {
   isOpen: boolean;
@@ -78,11 +79,7 @@ export function CatGameModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [muted, setMuted] = useState(isCatMuted());
   const [quoteIndex, setQuoteIndex] = useState(0);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsMounted();
 
   // Keyboard Escape key to close modal
   useEffect(() => {
@@ -119,8 +116,10 @@ export function CatGameModal({
 
       setFeedbackMsg(data.message || "Thao tác thành công!");
       onRefresh();
-    } catch (err: any) {
-      setErrorMsg(err.message || "Không thể thực hiện thao tác");
+    } catch (err: unknown) {
+      setErrorMsg(
+        err instanceof Error ? err.message : "Không thể thực hiện thao tác"
+      );
     } finally {
       setLoadingAction(null);
     }

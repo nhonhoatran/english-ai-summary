@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth/require-auth";
 import { awardPoints, getUtcMidnight } from "@/lib/points/award-points";
 import { PointSource } from "@prisma/client";
 import { db } from "@/lib/db";
+import { handleRouteError } from "@/lib/api/handle-route-error";
 
 // Simple in-memory rate limiting map: userId -> lastAwardTimestampMs
 const lastAwardMap = new Map<string, number>();
@@ -75,11 +76,7 @@ export async function POST(request: Request) {
       success: true,
       ...result,
     });
-  } catch (error: any) {
-    if (error?.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    console.error("Error in POST /api/points/award:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error: unknown) {
+    return handleRouteError("POST /api/points/award", error);
   }
 }

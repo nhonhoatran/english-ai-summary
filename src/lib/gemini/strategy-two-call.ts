@@ -1,3 +1,4 @@
+import type { Schema } from "@google/genai";
 import { ai, GEMINI_MODEL } from "./client";
 import {
   lessonAnalysisSchema,
@@ -45,7 +46,9 @@ export async function executeTwoCallStrategy(
       contents: transcriptionPrompt,
       config: {
         responseMimeType: "application/json",
-        responseSchema: getTranscriptJsonSchema() as any,
+        // The helpers emit plain OpenAPI-shaped objects; Gemini's Schema type is
+        // structurally the same but nominally distinct, so a cast is required.
+        responseSchema: getTranscriptJsonSchema() as unknown as Schema,
       },
     });
 
@@ -67,7 +70,7 @@ export async function executeTwoCallStrategy(
     contents: analysisPrompt,
     config: {
       responseMimeType: "application/json",
-      responseSchema: getLessonAnalysisJsonSchema() as any,
+      responseSchema: getLessonAnalysisJsonSchema() as unknown as Schema,
     },
   });
 

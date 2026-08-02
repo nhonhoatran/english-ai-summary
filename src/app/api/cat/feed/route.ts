@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getTodayUserPoints, getUserPointsBalance } from "@/lib/points/get-user-points";
 import { getUtcMidnight } from "@/lib/points/award-points";
 import { computeCatMood } from "@/lib/cat/compute-cat-mood";
+import { handleRouteError } from "@/lib/api/handle-route-error";
 
 export async function POST() {
   try {
@@ -72,11 +73,7 @@ export async function POST() {
       pointsBalance: newBalance,
       message: "Cho mèo ăn thành công! (-5 điểm)",
     });
-  } catch (error: any) {
-    if (error?.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    console.error("Error in POST /api/cat/feed:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error: unknown) {
+    return handleRouteError("POST /api/cat/feed", error);
   }
 }

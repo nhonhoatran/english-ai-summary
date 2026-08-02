@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { getUtcMidnight } from "@/lib/points/award-points";
+import { handleRouteError } from "@/lib/api/handle-route-error";
 
 export async function POST(request: Request) {
   try {
@@ -81,8 +82,7 @@ export async function POST(request: Request) {
       updatedCount,
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
-    console.error("Error in POST /api/cron/cat-decay:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error: unknown) {
+    return handleRouteError("POST /api/cron/cat-decay", error);
   }
 }

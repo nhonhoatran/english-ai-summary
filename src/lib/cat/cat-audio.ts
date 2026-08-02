@@ -5,10 +5,16 @@
 let audioCtx: AudioContext | null = null;
 let soundMuted = false;
 
+/** Safari below 14.1 only exposes the prefixed constructor. */
+interface WindowWithWebkitAudio extends Window {
+  webkitAudioContext?: typeof AudioContext;
+}
+
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!audioCtx) {
-    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    const AudioCtx =
+      window.AudioContext ?? (window as WindowWithWebkitAudio).webkitAudioContext;
     if (AudioCtx) {
       audioCtx = new AudioCtx();
     }
