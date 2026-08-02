@@ -41,8 +41,8 @@ export function CreateClassroomBtn({ lessonId }: CreateClassroomBtnProps) {
       }
 
       setCode(data.code);
-    } catch (err: any) {
-      setError(err.message || "Đã xảy ra lỗi khi tạo lớp.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Đã xảy ra lỗi khi tạo lớp.");
     } finally {
       setLoading(false);
     }
@@ -81,8 +81,9 @@ export function CreateClassroomBtn({ lessonId }: CreateClassroomBtnProps) {
             <Users className="w-5 h-5 text-blue-400" />
             Tạo lớp học trực tuyến
           </DialogTitle>
-          <DialogDescription className="text-xs text-zinc-400">
-            Tạo phòng học cùng các thành viên khác theo thời gian thực.
+          <DialogDescription className="text-xs text-zinc-400 leading-relaxed">
+            Bài học này sẽ được chuyển vào lớp mới và trở thành bài đầu tiên của
+            lớp. Sau đó bạn có thể thêm nhiều bài khác vào cùng lớp.
           </DialogDescription>
         </DialogHeader>
 

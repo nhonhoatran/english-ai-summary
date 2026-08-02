@@ -1,7 +1,7 @@
 // path/to/src/components/lesson/lesson-tabs.tsx
 "use client";
 
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, useRef, ReactNode } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FileText, BookOpen, HelpCircle, BookMarked, MessageSquare, Brain, PenLine } from "lucide-react";
 
@@ -37,12 +37,19 @@ export function LessonTabs({
     ? (controlledActiveTab as TabValue)
     : internalActiveTab;
 
+  // Parents pass an inline arrow, so depending on the callback directly would
+  // re-subscribe the hash listener on every render. Keep it in a ref instead.
+  const onTabChangeRef = useRef(controlledOnTabChange);
+  useEffect(() => {
+    onTabChangeRef.current = controlledOnTabChange;
+  }, [controlledOnTabChange]);
+
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace("#", "");
       if (VALID_TABS.includes(hash as TabValue)) {
         setInternalActiveTab(hash as TabValue);
-        controlledOnTabChange?.(hash);
+        onTabChangeRef.current?.(hash);
       }
     };
 
@@ -121,25 +128,59 @@ export function LessonTabs({
         </TabsList>
       </div>
 
-      <TabsContent value="summary" className="mt-4 focus-visible:outline-none animate-scale-in">
+      {/*
+        keepMounted is REQUIRED, not cosmetic: Base UI's Tabs.Panel defaults to
+        keepMounted={false}, which unmounts the hidden panel and throws away all
+        of its React state. Without this, leaving the Practice tab reset the
+        learner back to prompt 1 (and the progress bar back to 1/N) every time.
+      */}
+      <TabsContent
+        value="summary"
+        keepMounted
+        className="mt-4 focus-visible:outline-none animate-scale-in"
+      >
         {summaryTab}
       </TabsContent>
-      <TabsContent value="script" className="mt-4 focus-visible:outline-none animate-scale-in">
+      <TabsContent
+        value="script"
+        keepMounted
+        className="mt-4 focus-visible:outline-none animate-scale-in"
+      >
         {scriptTab}
       </TabsContent>
-      <TabsContent value="dialogue" className="mt-4 focus-visible:outline-none animate-scale-in">
+      <TabsContent
+        value="dialogue"
+        keepMounted
+        className="mt-4 focus-visible:outline-none animate-scale-in"
+      >
         {dialogueTab}
       </TabsContent>
-      <TabsContent value="grammar" className="mt-4 focus-visible:outline-none animate-scale-in">
+      <TabsContent
+        value="grammar"
+        keepMounted
+        className="mt-4 focus-visible:outline-none animate-scale-in"
+      >
         {grammarTab}
       </TabsContent>
-      <TabsContent value="quiz" className="mt-4 focus-visible:outline-none animate-scale-in">
+      <TabsContent
+        value="quiz"
+        keepMounted
+        className="mt-4 focus-visible:outline-none animate-scale-in"
+      >
         {quizTab}
       </TabsContent>
-      <TabsContent value="vocab" className="mt-4 focus-visible:outline-none animate-scale-in">
+      <TabsContent
+        value="vocab"
+        keepMounted
+        className="mt-4 focus-visible:outline-none animate-scale-in"
+      >
         {vocabTab}
       </TabsContent>
-      <TabsContent value="writing" className="mt-4 focus-visible:outline-none animate-scale-in">
+      <TabsContent
+        value="writing"
+        keepMounted
+        className="mt-4 focus-visible:outline-none animate-scale-in"
+      >
         {writingTab}
       </TabsContent>
     </Tabs>

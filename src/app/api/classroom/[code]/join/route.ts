@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { cookies } from "next/headers";
+import { requireAuth } from "@/lib/auth/require-auth";
+import { sanitizeDisplayName } from "@/lib/classroom/display-name";
+import {
+  CLASSROOM_MEMBER_COOKIE_MAX_AGE,
+  memberCookieName,
+} from "@/lib/classroom/member-cookie";
+import { emitToRoom } from "@/lib/realtime/emit-to-room";
+import { handleRouteError } from "@/lib/api/handle-route-error";
 
 interface RouteParams {
   params: Promise<{ code: string }>;
@@ -8,29 +16,21 @@ interface RouteParams {
 
 export async function POST(req: Request, { params }: RouteParams) {
   try {
+    const session = await requireAuth();
     const { code } = await params;
     const body = await req.json().catch(() => ({}));
-    let { displayName, phone } = body;
 
-    if (!displayName || typeof displayName !== "string") {
-      return NextResponse.json(
-        { error: "Vui lòng nhập tên hiển thị." },
-        { status: 400 }
-      );
-    }
-
-    // Clean display name
-    displayName = displayName.trim().replace(/<[^>]*>?/gm, "");
-    if (displayName.length === 0 || displayName.length > 30) {
+    const displayName = sanitizeDisplayName(body?.displayName);
+    if (!displayName) {
       return NextResponse.json(
         { error: "Tên hiển thị phải từ 1 đến 30 ký tự." },
         { status: 400 }
       );
     }
 
-    // Load classroom
     const classroom = await db.classroom.findUnique({
       where: { code: code.toUpperCase() },
+      select: { id: true, code: true, isActive: true, currentLessonId: true },
     });
 
     if (!classroom || !classroom.isActive) {
@@ -40,43 +40,57 @@ export async function POST(req: Request, { params }: RouteParams) {
       );
     }
 
-    // Check if displayName already exists in this classroom
-    const existingMember = await db.classMember.findUnique({
+    // Identity is the logged-in user, not the typed name — otherwise picking a
+    // name someone else already used would hand over their membership row.
+    const existingForUser = await db.classMember.findUnique({
       where: {
-        classroomId_displayName: {
-          classroomId: classroom.id,
-          displayName,
-        },
+        classroomId_userId: { classroomId: classroom.id, userId: session.userId },
       },
     });
 
-    let member = existingMember;
+    const nameOwner = await db.classMember.findUnique({
+      where: {
+        classroomId_displayName: { classroomId: classroom.id, displayName },
+      },
+      select: { id: true },
+    });
 
-    if (!member) {
-      member = await db.classMember.create({
-        data: {
-          classroomId: classroom.id,
-          displayName,
-          phone: phone ? String(phone).trim() : null,
-          lastSeenAt: new Date(),
-        },
-      });
-    } else {
-      // Update lastSeenAt for existing member re-joining
-      member = await db.classMember.update({
-        where: { id: member.id },
-        data: { lastSeenAt: new Date() },
-      });
+    if (nameOwner && nameOwner.id !== existingForUser?.id) {
+      return NextResponse.json(
+        { error: "Tên này đã có người dùng trong lớp, chọn tên khác nghen." },
+        { status: 409 }
+      );
     }
 
-    // Set cookie
+    const member = existingForUser
+      ? await db.classMember.update({
+          where: { id: existingForUser.id },
+          data: { displayName, lastSeenAt: new Date() },
+        })
+      : await db.classMember.create({
+          data: {
+            classroomId: classroom.id,
+            userId: session.userId,
+            displayName,
+            phone: session.phone ?? null,
+            lastSeenAt: new Date(),
+          },
+        });
+
     const cookieStore = await cookies();
-    cookieStore.set(`classroom_member_id_${classroom.code}`, member.id, {
+    cookieStore.set(memberCookieName(classroom.code), member.id, {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24, // 1 day
+      maxAge: CLASSROOM_MEMBER_COOKIE_MAX_AGE,
     });
+
+    if (!existingForUser) {
+      emitToRoom(classroom.code, "member-joined", {
+        memberId: member.id,
+        displayName: member.displayName,
+      });
+    }
 
     return NextResponse.json({
       memberId: member.id,
@@ -84,15 +98,11 @@ export async function POST(req: Request, { params }: RouteParams) {
       classroom: {
         id: classroom.id,
         code: classroom.code,
-        lessonId: classroom.lessonId,
+        currentLessonId: classroom.currentLessonId,
         isActive: classroom.isActive,
       },
     });
-  } catch (error: any) {
-    console.error("Error in POST /api/classroom/[code]/join:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleRouteError("POST /api/classroom/[code]/join", error);
   }
 }

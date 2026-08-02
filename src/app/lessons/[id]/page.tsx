@@ -18,6 +18,8 @@ import { DeleteLessonButton } from "@/components/lesson/delete-lesson-button";
 import { CreateClassroomBtn } from "@/components/classroom/create-classroom-btn";
 import { PointsWidget } from "@/components/points/points-widget";
 import { LessonTimeTracker } from "@/components/points/lesson-time-tracker";
+import { getOwnAttempts } from "@/lib/practice/practice-attempts";
+import { getTodayPointsSummary } from "@/lib/points/get-today-points-summary";
 
 interface LessonPageProps {
   params: Promise<{ id: string }>;
@@ -50,6 +52,12 @@ export default async function LessonPage({ params }: LessonPageProps) {
   if (!lesson) {
     notFound();
   }
+
+  // Solo practice still persists, so progress survives a refresh here too.
+  const [ownAttempts, pointsSummary] = await Promise.all([
+    getOwnAttempts(lesson.id, session.userId),
+    getTodayPointsSummary(session.userId),
+  ]);
 
   const vocabItemsForTab = lesson.vocabItems.map((item) => ({
     id: item.id,
@@ -91,7 +99,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
           </Link>
           <div className="flex items-center gap-3">
             <CreateClassroomBtn lessonId={lesson.id} />
-            <PointsWidget />
+            <PointsWidget initialData={pointsSummary} />
             <DeleteLessonButton
               lessonId={lesson.id}
               redirectOnSuccess={true}
@@ -132,7 +140,6 @@ export default async function LessonPage({ params }: LessonPageProps) {
               summaryTab={
                 <TabSummary
                   summary={lesson.summary ?? ""}
-                  title={lesson.title}
                   description={lesson.description}
                 />
               }
@@ -161,6 +168,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   prompts={writingPromptsForTab}
                   lessonId={lesson.id}
                   targetLanguage={lesson.targetLanguage}
+                  currentUserId={session.userId}
+                  initialOwnAttempts={ownAttempts}
                 />
               }
             />

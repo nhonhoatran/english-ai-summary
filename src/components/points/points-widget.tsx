@@ -1,44 +1,41 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Flame, Coins, Trophy, X, Zap, RefreshCw } from "lucide-react";
 import { StreakCalendar } from "./streak-calendar";
-
-interface TodayPointsData {
-  totalToday: number;
-  currentStreak: number;
-  longestStreak: number;
-}
+import { useIsMounted } from "@/lib/react/use-is-mounted";
+import type { TodayPointsSummary } from "@/lib/points/get-today-points-summary";
 
 interface HistoryItem {
   date: string;
   points: number;
 }
 
-export function PointsWidget() {
-  const [data, setData] = useState<TodayPointsData | null>(null);
+interface PointsWidgetProps {
+  /**
+   * Rendered by a server component, which already has the data — passing it in
+   * removes the on-mount fetch waterfall (and the setState-inside-effect it
+   * required). Refreshes after that happen from event handlers.
+   */
+  initialData: TodayPointsSummary;
+}
+
+export function PointsWidget({ initialData }: PointsWidgetProps) {
+  const [data, setData] = useState<TodayPointsSummary>(initialData);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsMounted();
 
-  useEffect(() => {
-    setMounted(true);
-    fetchToday();
-  }, []);
-
-  const fetchToday = async () => {
+  const refreshToday = useCallback(async () => {
     try {
       const res = await fetch("/api/points/today");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json);
-      }
+      if (res.ok) setData(await res.json());
     } catch (err) {
-      console.error("Failed to fetch today points", err);
+      console.error("Failed to refresh today points", err);
     }
-  };
+  }, []);
 
   // Keyboard Escape key to close modal
   useEffect(() => {
@@ -54,6 +51,9 @@ export function PointsWidget() {
   const handleOpenDrawer = async () => {
     setIsOpen(true);
     setLoadingHistory(true);
+    // Opening the drawer is also the natural moment to pick up points earned
+    // since the page was rendered.
+    void refreshToday();
     try {
       const res = await fetch("/api/points/history");
       if (res.ok) {
@@ -73,12 +73,7 @@ export function PointsWidget() {
     return 1;
   };
 
-  if (!data) {
-    return (
-      <div className="h-8 w-28 bg-zinc-800/50 animate-pulse rounded-full border border-zinc-700/50" />
-    );
-  }
-
+  // No loading skeleton needed: the server supplies the initial data.
   const multiplier = getMultiplier(data.currentStreak);
 
   const modalContent = isOpen ? (

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { ingestLesson } from "@/lib/ingest/ingest-lesson";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { LessonAnalysisOptions } from "@/lib/gemini/prompt-lesson-analysis";
+import { emitToRoom } from "@/lib/realtime/emit-to-room";
 
 import { db } from "@/lib/db";
 
@@ -23,21 +24,49 @@ export async function ingestLessonAction(
     return { success: false, error: "Please enter a YouTube video URL." };
   }
 
-  const result = await ingestLesson(url, session.userId, options);
+  // Resolve + authorize the classroom before spending minutes on AI generation.
+  let classroom: {
+    id: string;
+    code: string;
+    currentLessonId: string | null;
+    hostUserId: string;
+  } | null = null;
+
+  if (classroomCode) {
+    classroom = await db.classroom.findUnique({
+      where: { code: classroomCode.toUpperCase() },
+      select: { id: true, code: true, currentLessonId: true, hostUserId: true },
+    });
+
+    if (!classroom) {
+      return { success: false, error: "Lớp học không tồn tại." };
+    }
+    if (classroom.hostUserId !== session.userId) {
+      return { success: false, error: "Chỉ Host mới được thêm bài học vào lớp." };
+    }
+  }
+
+  const result = await ingestLesson(url, session.userId, options, classroom?.id);
 
   if (!result.ok) {
     return { success: false, error: result.error };
   }
 
-  if (classroomCode) {
-    await db.classroom.update({
-      where: { code: classroomCode.toUpperCase() },
-      data: {
-        lessonId: result.lessonId,
-        lastSyncAt: new Date(),
-      },
+  if (classroom) {
+    // Only auto-select the new lesson when the class isn't on one yet — never
+    // yank the whole class off a lesson they are in the middle of.
+    if (!classroom.currentLessonId) {
+      await db.classroom.update({
+        where: { id: classroom.id },
+        data: { currentLessonId: result.lessonId, lastSyncAt: new Date() },
+      });
+    }
+
+    emitToRoom(classroom.code, "lessons-changed", {
+      lessonId: result.lessonId,
+      autoSelected: !classroom.currentLessonId,
     });
-    revalidatePath(`/classroom/${classroomCode.toUpperCase()}`);
+    revalidatePath(`/classroom/${classroom.code}`);
   }
 
   revalidatePath("/");

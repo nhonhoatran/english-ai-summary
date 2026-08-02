@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { db } from "@/lib/db";
+import { emitToRoom } from "@/lib/realtime/emit-to-room";
+import { handleRouteError } from "@/lib/api/handle-route-error";
 
 interface RouteParams {
   params: Promise<{ code: string }>;
@@ -35,15 +37,12 @@ export async function POST(req: Request, { params }: RouteParams) {
       data: { isActive: false },
     });
 
+    // Broadcast from the server, after the host check — previously the client
+    // emitted "end-room" directly, so any member could close the class.
+    emitToRoom(formattedCode, "room-ended");
+
     return NextResponse.json({ success: true, message: "Đã kết thúc lớp học." });
-  } catch (error: any) {
-    if (error?.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    console.error("Error in POST /api/classroom/[code]/end:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleRouteError("POST /api/classroom/[code]/end", error);
   }
 }

@@ -12,7 +12,6 @@ interface ClassroomJoinFormProps {
 
 export function ClassroomJoinForm({ code, onJoined }: ClassroomJoinFormProps) {
   const [displayName, setDisplayName] = useState("");
-  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,13 +26,12 @@ export function ClassroomJoinForm({ code, onJoined }: ClassroomJoinFormProps) {
     setError(null);
 
     try {
+      // Phone is not asked for: joining requires a login, so the server takes
+      // it from the session instead of trusting a typed-in value.
       const res = await fetch(`/api/classroom/${code}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          displayName: displayName.trim(),
-          phone: phone.trim() || undefined,
-        }),
+        body: JSON.stringify({ displayName: displayName.trim() }),
       });
 
       const data = await res.json();
@@ -46,8 +44,8 @@ export function ClassroomJoinForm({ code, onJoined }: ClassroomJoinFormProps) {
       } else {
         window.location.reload();
       }
-    } catch (err: any) {
-      setError(err.message || "Đã xảy ra lỗi.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Đã xảy ra lỗi.");
     } finally {
       setLoading(false);
     }
@@ -86,19 +84,6 @@ export function ClassroomJoinForm({ code, onJoined }: ClassroomJoinFormProps) {
             onChange={(e) => setDisplayName(e.target.value)}
             maxLength={30}
             required
-            className="bg-zinc-900/90 border-zinc-700/80 text-white placeholder:text-zinc-500 text-sm focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-zinc-300">
-            Số điện thoại <span className="text-zinc-500 font-normal">(không bắt buộc)</span>
-          </label>
-          <Input
-            type="tel"
-            placeholder="Ví dụ: 0912345678"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
             className="bg-zinc-900/90 border-zinc-700/80 text-white placeholder:text-zinc-500 text-sm focus:ring-blue-500"
           />
         </div>

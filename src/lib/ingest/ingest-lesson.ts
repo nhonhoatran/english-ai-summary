@@ -37,7 +37,8 @@ function sanitizeErrorMessage(error: unknown): string {
 export async function ingestLesson(
   rawUrl: string,
   userId: string,
-  options?: LessonAnalysisOptions
+  options?: LessonAnalysisOptions,
+  classroomId?: string | null
 ): Promise<IngestResult> {
   const parseResult = parseYoutubeUrl(rawUrl);
   if (!parseResult.ok) {
@@ -46,19 +47,20 @@ export async function ingestLesson(
 
   const { videoId } = parseResult;
   const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  const scopedClassroomId = classroomId ?? null;
 
-  // 1. Check existing lesson for idempotency for this specific user
-  const existing = await db.lesson.findUnique({
-    where: {
-      userId_videoId: {
-        userId,
-        videoId,
-      },
-    },
+  // 1. Idempotency is scoped to the target: a solo lesson and the same video
+  //    inside a classroom are separate rows, so one video can be reused across
+  //    several classrooms without clobbering the others.
+  const existing = await db.lesson.findFirst({
+    where: { userId, videoId, classroomId: scopedClassroomId },
+    orderBy: { createdAt: "desc" },
   });
 
   if (existing && existing.status === "READY") {
-    console.log(`[ingestLesson] Reusing existing lesson for user=${userId} videoId=${videoId}`);
+    console.log(
+      `[ingestLesson] Reusing existing lesson for user=${userId} videoId=${videoId} classroom=${scopedClassroomId ?? "solo"}`
+    );
     return { ok: true, lessonId: existing.id, reused: true };
   }
 
@@ -74,6 +76,11 @@ export async function ingestLesson(
       },
     });
   } else {
+    // New classroom lessons are appended to the end of the classroom's list.
+    const classroomOrder = scopedClassroomId
+      ? await db.lesson.count({ where: { classroomId: scopedClassroomId } })
+      : 0;
+
     const created = await db.lesson.create({
       data: {
         userId,
@@ -83,6 +90,8 @@ export async function ingestLesson(
         transcriptSource: "youtube-captions",
         targetLanguage: options?.targetLanguage ?? "english",
         status: "GENERATING",
+        classroomId: scopedClassroomId,
+        classroomOrder,
       },
     });
     lessonId = created.id;

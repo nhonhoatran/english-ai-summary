@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { getSocket } from "@/lib/socket";
 
 interface ClassroomWaitingLessonProps {
   code: string;
@@ -15,12 +16,22 @@ export function ClassroomWaitingLesson({ code, hostName }: ClassroomWaitingLesso
   const router = useRouter();
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      router.refresh();
-    }, 3000);
+    const socket = getSocket();
+    const onLessonReady = () => router.refresh();
 
-    return () => clearInterval(interval);
-  }, [router]);
+    socket.on("lessons-changed", onLessonReady);
+    socket.on("lesson-switched", onLessonReady);
+
+    // Slow safety net in case the socket is down; the socket does the real work
+    // so this no longer needs to hammer the server every 3 seconds.
+    const interval = setInterval(() => router.refresh(), 20000);
+
+    return () => {
+      socket.off("lessons-changed", onLessonReady);
+      socket.off("lesson-switched", onLessonReady);
+      clearInterval(interval);
+    };
+  }, [router, code]);
 
   return (
     <div className="max-w-md mx-auto space-y-6 pt-8 animate-fade-in text-center">
@@ -58,7 +69,7 @@ export function ClassroomWaitingLesson({ code, hostName }: ClassroomWaitingLesso
 
         <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800/60 text-xs text-zinc-500 flex items-center justify-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>Tự động đồng bộ mỗi 3 giây</span>
+          <span>Tự động cập nhật realtime</span>
         </div>
       </div>
     </div>

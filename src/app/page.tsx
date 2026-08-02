@@ -10,13 +10,16 @@ import { PointsWidget } from "@/components/points/points-widget";
 import Link from "next/link";
 import { Sparkles, Phone, BookOpen, BookMarked, Users, Video } from "lucide-react";
 import { requireAuth } from "@/lib/auth/require-auth";
+import { getTodayPointsSummary } from "@/lib/points/get-today-points-summary";
 
 export default async function Home() {
   const session = await requireAuth();
 
-  const [lessons, classrooms, dueCount, totalVocabCount] = await Promise.all([
+  const [lessons, classrooms, dueCount, totalVocabCount, pointsSummary] =
+    await Promise.all([
     db.lesson.findMany({
-      where: { userId: session.userId },
+      // Lessons owned by a classroom live inside that class, not in this list.
+      where: { userId: session.userId, classroomId: null },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -33,14 +36,14 @@ export default async function Home() {
       where: {
         OR: [
           { hostUserId: session.userId },
-          { members: { some: { phone: session.phone } } },
+          { members: { some: { userId: session.userId } } },
         ],
       },
-      orderBy: { createdAt: "desc" },
-      take: 10,
+      orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
+      take: 20,
       include: {
-        lesson: { select: { title: true, videoId: true } },
-        _count: { select: { members: true } },
+        currentLesson: { select: { title: true } },
+        _count: { select: { members: true, lessons: true } },
       },
     }),
     db.flashcard.count({
@@ -49,12 +52,16 @@ export default async function Home() {
         due: { lte: new Date() },
       },
     }),
-    db.vocabItem.count({
-      where: {
-        lesson: { userId: session.userId },
-      },
-    }),
-  ]);
+      db.vocabItem.count({
+        where: {
+          lesson: { userId: session.userId },
+        },
+      }),
+      getTodayPointsSummary(session.userId),
+    ]);
+
+  const activeClassrooms = classrooms.filter((c) => c.isActive);
+  const endedClassrooms = classrooms.filter((c) => !c.isActive);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center p-4 sm:p-8 relative overflow-hidden">
@@ -74,7 +81,7 @@ export default async function Home() {
             <span>SĐT: <strong className="text-white font-semibold">{session.phone}</strong></span>
           </div>
           <div className="flex items-center gap-3">
-            <PointsWidget />
+            <PointsWidget initialData={pointsSummary} />
             <LogoutButton />
           </div>
         </div>
@@ -138,27 +145,54 @@ export default async function Home() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-white tracking-wide flex items-center gap-2">
               <Users className="w-5 h-5 text-emerald-400" />
-              <span>Lớp Học Của Bạn</span>
+              <span>Lớp Học Đang Hoạt Động</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 font-normal">
-                {classrooms.length}
+                {activeClassrooms.length}
               </span>
             </h2>
           </div>
 
-          {classrooms.length === 0 ? (
+          {activeClassrooms.length === 0 ? (
             <div className="p-8 text-center text-zinc-500 glass-card text-sm space-y-3 border-dashed border-zinc-800">
               <Users className="w-8 h-8 text-zinc-600 mx-auto" />
-              <p className="text-zinc-400 font-medium">Chưa có lớp học nào.</p>
-              <p className="text-xs text-zinc-500">Bấm nút "Tạo Lớp Học Mới" ở trên để khởi tạo lớp đầu tiên!</p>
+              <p className="text-zinc-400 font-medium">Chưa có lớp học nào đang mở.</p>
+              <p className="text-xs text-zinc-500">
+                Bấm &quot;Tạo Lớp Học Mới&quot; ở trên để khởi tạo lớp đầu tiên!
+              </p>
             </div>
           ) : (
             <div className="grid gap-3">
-              {classrooms.map((classroom) => (
-                <ClassroomListCard key={classroom.id} classroom={classroom} currentUserId={session.userId} />
+              {activeClassrooms.map((classroom) => (
+                <ClassroomListCard
+                  key={classroom.id}
+                  classroom={classroom}
+                  currentUserId={session.userId}
+                />
               ))}
             </div>
           )}
         </div>
+
+        {endedClassrooms.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold text-zinc-400 tracking-wide flex items-center gap-2">
+              <Users className="w-4 h-4 text-zinc-600" />
+              <span>Lớp Đã Kết Thúc</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-500 font-normal">
+                {endedClassrooms.length}
+              </span>
+            </h2>
+            <div className="grid gap-3 opacity-70">
+              {endedClassrooms.map((classroom) => (
+                <ClassroomListCard
+                  key={classroom.id}
+                  classroom={classroom}
+                  currentUserId={session.userId}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Solo Lesson Generator Card (Secondary Option) */}
         <div className="space-y-4 pt-6 border-t border-zinc-800/80">

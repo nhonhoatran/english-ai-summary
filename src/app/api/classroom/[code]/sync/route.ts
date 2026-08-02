@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { db } from "@/lib/db";
+import { handleRouteError } from "@/lib/api/handle-route-error";
 
 interface RouteParams {
   params: Promise<{ code: string }>;
@@ -47,14 +48,7 @@ export async function POST(req: Request, { params }: RouteParams) {
       currentSegment: updated.currentSegment,
       lastSyncAt: updated.lastSyncAt,
     });
-  } catch (error: any) {
-    if (error?.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    console.error("Error in POST /api/classroom/[code]/sync:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    return handleRouteError("POST /api/classroom/[code]/sync", error);
   }
 }

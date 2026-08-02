@@ -2,11 +2,10 @@ import { BookText, Brain } from "lucide-react";
 
 interface TabSummaryProps {
   summary: string;
-  title: string;
   description: string | null;
 }
 
-export function TabSummary({ summary, title, description }: TabSummaryProps) {
+export function TabSummary({ summary, description }: TabSummaryProps) {
   if (!summary) {
     return (
       <div className="p-8 text-center text-zinc-500 rounded-xl bg-zinc-900/50 border border-zinc-800">

@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { LessonPlayerProvider } from "@/components/lesson/lesson-player-provider";
 import { LessonTabs } from "@/components/lesson/lesson-tabs";
 import { TabSummary } from "@/components/lesson/tab-summary";
@@ -11,131 +13,172 @@ import { TabQuiz } from "@/components/lesson/tab-quiz";
 import { TabVocabulary } from "@/components/lesson/tab-vocabulary";
 import { TabWritingPractice } from "@/components/lesson/tab-writing-practice";
 import { MemberList } from "@/components/classroom/member-list";
+import { ClassroomHeaderBar } from "@/components/classroom/classroom-header-bar";
+import {
+  ClassroomLessonList,
+  type ClassroomLessonSummary,
+} from "@/components/classroom/classroom-lesson-list";
+import { ClassroomLeaderboard } from "@/components/classroom/classroom-leaderboard";
+import { ClassroomActivityFeed } from "@/components/classroom/classroom-activity-feed";
 import { Button } from "@/components/ui/button";
 import { getSocket } from "@/lib/socket";
-import {
-  Radio,
-  PowerOff,
-  Copy,
-  Check,
-  Compass,
-  Crown,
-  AlertTriangle,
-  ArrowLeft,
-  Zap,
-} from "lucide-react";
-import Link from "next/link";
+import type { PracticeAttemptView } from "@/lib/practice/practice-types";
+import { AlertTriangle } from "lucide-react";
 
 interface ClassroomViewerProps {
   code: string;
+  className: string | null;
   isHost: boolean;
   hostName: string;
-  lesson: any;
+  hostUserId: string;
+  currentUserId: string;
+  displayName: string;
+  memberId: string | null;
+  /** Fully-loaded lesson the class is currently on, or null when none is set. */
+  lesson: {
+    id: string;
+    videoId: string;
+    title: string;
+    description: string | null;
+    summary: string | null;
+    grammarTheme: string | null;
+    targetLanguage: "english" | "chinese";
+    segments: unknown[];
+    dialogueLines: unknown[];
+    grammarPoints: unknown[];
+    quizQuestions: unknown[];
+    writingPrompts: { id: string; orderIndex: number; viMeaning: string }[];
+    vocabItems: {
+      id: string;
+      orderIndex: number;
+      term: string;
+      ipa: string | null;
+      meaning: string;
+      example: string;
+      flashcards?: { id: string }[];
+    }[];
+  };
+  lessons: ClassroomLessonSummary[];
   initialTab?: string;
-  initialSegment?: number;
+  ownAttempts: PracticeAttemptView[];
+  classroomAttempts: PracticeAttemptView[];
 }
 
 export function ClassroomViewer({
   code,
+  className,
   isHost,
   hostName,
+  hostUserId,
+  currentUserId,
+  displayName,
+  memberId,
   lesson,
+  lessons,
   initialTab = "summary",
+  ownAttempts,
+  classroomAttempts,
 }: ClassroomViewerProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [isFreeMode, setIsFreeMode] = useState(false);
-  const [isActive, setIsActive] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [roomState, setRoomState] = useState<"live" | "ended" | "deleted">("live");
   const [ending, setEnding] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
 
-  // Socket.io Realtime Listener
+  // Read inside the socket handler without making the subscription depend on
+  // it — otherwise toggling free mode tore down the socket and re-joined the
+  // room, making the member blink out of everyone else's presence list.
+  const followsHostRef = useRef(!isHost && !isFreeMode);
+
+  useEffect(() => {
+    followsHostRef.current = !isHost && !isFreeMode;
+  }, [isHost, isFreeMode]);
+
   useEffect(() => {
     const socket = getSocket();
 
     const onConnect = () => {
       setIsConnected(true);
-      socket.emit("join-room", { code, displayName: isHost ? hostName : "Member" });
+      // Join with the real identity — everyone used to join as "Member", so the
+      // server could not tell members apart for presence or the feed.
+      socket.emit("join-room", { code, userId: currentUserId, memberId, displayName });
     };
 
-    const onDisconnect = () => {
-      setIsConnected(false);
-    };
+    const onDisconnect = () => setIsConnected(false);
 
-    const onStateUpdated = (data: { currentTab: string; currentSegment: number; lastSyncAt: string }) => {
-      if (!isHost && !isFreeMode && data.currentTab) {
+    const onStateUpdated = (data: { currentTab?: string }) => {
+      if (followsHostRef.current && data?.currentTab) {
         setActiveTab(data.currentTab);
       }
     };
 
-    const onRoomEnded = () => {
-      setIsActive(false);
-    };
+    const onLessonChanged = () => router.refresh();
+    const onRoomEnded = () => setRoomState("ended");
+    const onRoomDeleted = () => setRoomState("deleted");
 
-    if (socket.connected) {
-      onConnect();
-    } else {
-      socket.on("connect", onConnect);
-    }
-
+    socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("state-updated", onStateUpdated);
+    socket.on("lesson-switched", onLessonChanged);
+    socket.on("lessons-changed", onLessonChanged);
     socket.on("room-ended", onRoomEnded);
+    socket.on("room-deleted", onRoomDeleted);
+
+    if (socket.connected) onConnect();
 
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
       socket.off("state-updated", onStateUpdated);
+      socket.off("lesson-switched", onLessonChanged);
+      socket.off("lessons-changed", onLessonChanged);
       socket.off("room-ended", onRoomEnded);
+      socket.off("room-deleted", onRoomDeleted);
+      socket.emit("leave-room");
     };
-  }, [code, isHost, hostName, isFreeMode]);
+  }, [code, currentUserId, memberId, displayName, router]);
 
-  // Fallback Polling (10s) to keep lastSeenAt updated in DB
+  // Safety net: if the socket is down, "room ended" would never arrive. A slow
+  // poll still catches it without the old 10s hammering.
   useEffect(() => {
-    const fetchState = async () => {
+    const check = async () => {
       try {
         const res = await fetch(`/api/classroom/${code}/state`);
+        if (res.status === 404) {
+          setRoomState("deleted");
+          return;
+        }
         if (!res.ok) return;
         const data = await res.json();
-        if (!data.isActive) {
-          setIsActive(false);
-        }
-      } catch (err) {
-        console.error("State polling error:", err);
+        if (!data.isActive) setRoomState("ended");
+      } catch {
+        // offline — the socket listener will catch up on reconnect
       }
     };
 
-    const interval = setInterval(fetchState, 10000);
+    const interval = setInterval(check, 30000);
     return () => clearInterval(interval);
   }, [code]);
 
-  // Host tab sync trigger via Socket.io + DB
   const handleTabChange = async (newTab: string) => {
     setActiveTab(newTab);
-    if (isHost) {
-      const socket = getSocket();
-      socket.emit("sync-state", { code, currentTab: newTab, currentSegment: 0 });
+    if (!isHost) return;
 
-      // Async DB sync
-      fetch(`/api/classroom/${code}/sync`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentTab: newTab, currentSegment: 0 }),
-      }).catch(() => {});
-    }
+    getSocket().emit("sync-state", { code, currentTab: newTab, currentSegment: 0 });
+    fetch(`/api/classroom/${code}/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentTab: newTab, currentSegment: 0 }),
+    }).catch(() => {});
   };
 
-  // Host end class trigger via Socket.io + DB
   const handleEndClass = async () => {
-    if (!confirm("Bạn có chắc chắn muốn kết thúc lớp học này không?")) return;
+    if (!confirm("Kết thúc buổi học này? Lớp và bài học vẫn được giữ lại.")) return;
     setEnding(true);
-
-    const socket = getSocket();
-    socket.emit("end-room", { code });
-    setIsActive(false);
-
     try {
       await fetch(`/api/classroom/${code}/end`, { method: "POST" });
+      setRoomState("ended");
     } catch (err) {
       console.error("Failed to end classroom:", err);
     } finally {
@@ -143,33 +186,30 @@ export function ClassroomViewer({
     }
   };
 
-  const copyShareLink = () => {
-    const shareUrl = `${window.location.origin}/classroom/${code}`;
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  if (!isActive) {
+  if (roomState !== "live") {
     return (
       <div className="max-w-md mx-auto my-16 p-8 glass-card border border-rose-900/50 rounded-2xl text-center space-y-4 shadow-2xl">
         <div className="w-12 h-12 rounded-full bg-rose-950/60 border border-rose-800 text-rose-400 flex items-center justify-center mx-auto">
           <AlertTriangle className="w-6 h-6" />
         </div>
-        <h2 className="text-xl font-bold text-white">Lớp học đã kết thúc</h2>
+        <h2 className="text-xl font-bold text-white">
+          {roomState === "deleted" ? "Lớp học đã bị xóa" : "Buổi học đã kết thúc"}
+        </h2>
         <p className="text-xs text-zinc-400">
-          Host đã đóng buổi học này. Cảm ơn bạn đã tham gia!
+          {roomState === "deleted"
+            ? "Host đã xóa vĩnh viễn lớp học này."
+            : "Host đã đóng buổi học. Cảm ơn bạn đã tham gia!"}
         </p>
-        <Link href={`/lessons/${lesson.id}`}>
+        <Link href="/">
           <Button className="mt-4 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold rounded-xl">
-            Quay lại bài học đơn
+            Về trang chủ
           </Button>
         </Link>
       </div>
     );
   }
 
-  const vocabItemsForTab = (lesson.vocabItems || []).map((item: any) => ({
+  const vocabItemsForTab = lesson.vocabItems.map((item) => ({
     id: item.id,
     orderIndex: item.orderIndex,
     term: item.term,
@@ -179,102 +219,21 @@ export function ClassroomViewer({
     flashcard: item.flashcards?.[0] ? { id: item.flashcards[0].id } : null,
   }));
 
-  const writingPromptsForTab = (lesson.writingPrompts || []).map((wp: any) => ({
-    id: wp.id,
-    orderIndex: wp.orderIndex,
-    viMeaning: wp.viMeaning,
-  }));
-
   return (
     <div className="space-y-6">
-      {/* Top Classroom Navigation & Controls Bar */}
-      <div className="glass-card p-4 rounded-2xl border border-zinc-800/80 shadow-xl flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/lessons/${lesson.id}`}
-            className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-colors"
-            title="Quay về bài học"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
+      <ClassroomHeaderBar
+        code={code}
+        className={className}
+        lessonTitle={lesson.title}
+        isHost={isHost}
+        hostName={hostName}
+        isConnected={isConnected}
+        isFreeMode={isFreeMode}
+        ending={ending}
+        onToggleFreeMode={() => setIsFreeMode((prev) => !prev)}
+        onEndClass={handleEndClass}
+      />
 
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-zinc-400">Mã lớp:</span>
-              <span className="font-mono font-bold text-sm text-blue-400 px-2 py-0.5 rounded bg-blue-950/50 border border-blue-800/40">
-                {code}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={copyShareLink}
-                className="h-7 px-2 text-xs text-zinc-400 hover:text-white hover:bg-zinc-800"
-              >
-                {copied ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5" />
-                )}
-                <span className="ml-1">{copied ? "Đã chép" : "Copy link"}</span>
-              </Button>
-            </div>
-            <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1.5">
-              <span>Bài học: <strong className="text-zinc-200">{lesson.title}</strong></span>
-              {isConnected && (
-                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-semibold px-1.5 py-0.2 rounded bg-emerald-950/60 border border-emerald-800/40">
-                  <Zap className="w-3 h-3 text-emerald-400 animate-bounce" />
-                  Realtime Socket
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-
-        {/* Sync status & User Mode toggles */}
-        <div className="flex items-center gap-3">
-          {isHost ? (
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold">
-                <Crown className="w-4 h-4 text-amber-400" />
-                Bạn là Host (Điều hành lớp)
-              </span>
-              <Button
-                onClick={handleEndClass}
-                disabled={ending}
-                variant="destructive"
-                className="h-8 px-3 text-xs rounded-xl font-semibold gap-1.5 bg-rose-600/80 hover:bg-rose-600"
-              >
-                <PowerOff className="w-3.5 h-3.5" />
-                <span>Kết thúc lớp</span>
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              {!isFreeMode ? (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-950/40 border border-blue-800/40 text-blue-300 text-xs font-medium">
-                  <Radio className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
-                  <span>Đồng bộ theo Host ({hostName})</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-medium">
-                  <Compass className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Chế độ Tự do</span>
-                </div>
-              )}
-
-              <Button
-                onClick={() => setIsFreeMode(!isFreeMode)}
-                variant="outline"
-                className="h-8 px-3 text-xs rounded-xl border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 hover:text-white"
-              >
-                {isFreeMode ? "Bật đồng bộ" : "Tự do xem"}
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main Grid: Player & Tabs on Left, Member Sidebar on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3 space-y-6">
           <LessonPlayerProvider videoId={lesson.videoId}>
@@ -284,24 +243,23 @@ export function ClassroomViewer({
               summaryTab={
                 <TabSummary
                   summary={lesson.summary ?? ""}
-                  title={lesson.title}
                   description={lesson.description}
                 />
               }
-              scriptTab={<TabScript segments={lesson.segments || []} />}
+              scriptTab={<TabScript segments={lesson.segments as never} />}
               dialogueTab={
                 <TabDialogue
-                  dialogueLines={lesson.dialogueLines || []}
-                  segments={lesson.segments || []}
+                  dialogueLines={lesson.dialogueLines as never}
+                  segments={lesson.segments as never}
                 />
               }
               grammarTab={
                 <TabGrammar
                   grammarTheme={lesson.grammarTheme}
-                  grammarPoints={lesson.grammarPoints || []}
+                  grammarPoints={lesson.grammarPoints as never}
                 />
               }
-              quizTab={<TabQuiz questions={lesson.quizQuestions || []} />}
+              quizTab={<TabQuiz questions={lesson.quizQuestions as never} />}
               vocabTab={
                 <TabVocabulary
                   items={vocabItemsForTab}
@@ -310,17 +268,38 @@ export function ClassroomViewer({
               }
               writingTab={
                 <TabWritingPractice
-                  prompts={writingPromptsForTab}
+                  prompts={lesson.writingPrompts}
                   lessonId={lesson.id}
                   targetLanguage={lesson.targetLanguage}
+                  currentUserId={currentUserId}
+                  classroomCode={code}
+                  initialOwnAttempts={ownAttempts}
+                  initialClassroomAttempts={classroomAttempts}
                 />
               }
             />
           </LessonPlayerProvider>
         </div>
 
-        <div className="lg:col-span-1 space-y-6">
-          <MemberList code={code} hostName={hostName} />
+        <div className="lg:col-span-1 space-y-5">
+          <MemberList
+            code={code}
+            hostUserId={hostUserId}
+            currentUserId={currentUserId}
+          />
+          <ClassroomLessonList
+            code={code}
+            lessons={lessons}
+            currentLessonId={lesson.id}
+            isHost={isHost}
+          />
+          <ClassroomLeaderboard
+            lessonId={lesson.id}
+            initialAttempts={classroomAttempts}
+            totalPrompts={lesson.writingPrompts.length}
+            currentUserId={currentUserId}
+          />
+          <ClassroomActivityFeed code={code} currentUserId={currentUserId} />
         </div>
       </div>
     </div>

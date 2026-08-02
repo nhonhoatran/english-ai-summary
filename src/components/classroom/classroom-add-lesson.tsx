@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 
 interface ClassroomAddLessonProps {
   code: string;
+  /** How many lessons the class already owns — 0 means this is the first. */
+  lessonCount?: number;
 }
 
-export function ClassroomAddLesson({ code }: ClassroomAddLessonProps) {
+export function ClassroomAddLesson({ code, lessonCount = 0 }: ClassroomAddLessonProps) {
   return (
     <div className="max-w-3xl mx-auto space-y-6 pt-4 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -37,11 +39,15 @@ export function ClassroomAddLesson({ code }: ClassroomAddLessonProps) {
           </div>
 
           <h2 className="text-2xl font-extrabold text-white tracking-tight">
-            Thêm Bài Học Cho Lớp Học
+            {lessonCount > 0 ? "Thêm Bài Học Mới" : "Thêm Bài Học Đầu Tiên"}
           </h2>
 
           <p className="text-zinc-400 text-sm max-w-lg mx-auto leading-relaxed">
-            Dán đường dẫn video YouTube (Tiếng Anh hoặc Tiếng Trung) để khởi tạo bài học cho lớp học <span className="font-mono font-bold text-white">{code}</span>. Mọi học viên trong lớp sẽ lập tức nhận được bài học này!
+            Dán đường dẫn video YouTube (Tiếng Anh hoặc Tiếng Trung) để tạo bài học cho lớp{" "}
+            <span className="font-mono font-bold text-white">{code}</span>.{" "}
+            {lessonCount > 0
+              ? `Lớp đang có ${lessonCount} bài — bài mới sẽ được thêm vào cuối danh sách.`
+              : "Một lớp có thể chứa nhiều bài học, cứ thêm thoải mái nghen!"}
           </p>
         </div>
 

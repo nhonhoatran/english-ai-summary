@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Schema } from "@google/genai";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { ai, GEMINI_MODEL } from "@/lib/gemini/client";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { resolvePracticeAccess } from "@/lib/practice/practice-access";
+import { savePracticeAttempt } from "@/lib/practice/practice-attempts";
+import { emitToRoom } from "@/lib/realtime/emit-to-room";
 
 const RequestSchema = z.object({
   promptId: z.string().optional(),
@@ -32,19 +36,53 @@ export async function POST(req: NextRequest) {
     let viMeaning = parsed.data.viMeaning;
     let targetLanguage = "english";
 
+    // Set when the answer belongs to a stored prompt, so it can be persisted.
+    let promptContext: {
+      promptId: string;
+      promptIndex: number;
+      lessonId: string;
+      classroomId: string | null;
+      classroomCode: string | null;
+      displayName: string;
+    } | null = null;
+
     if (parsed.data.promptId) {
-      const prompt = await db.writingPrompt.findFirst({
-        where: { id: parsed.data.promptId, lesson: { userId: session.userId } },
-        include: { lesson: { select: { targetLanguage: true } } },
+      const prompt = await db.writingPrompt.findUnique({
+        where: { id: parsed.data.promptId },
+        select: {
+          id: true,
+          orderIndex: true,
+          enAnswer: true,
+          viMeaning: true,
+          lessonId: true,
+        },
       });
 
       if (!prompt) {
         return NextResponse.json({ error: "Writing prompt not found" }, { status: 404 });
       }
 
+      // Owner OR classroom member — not just the owner, otherwise students
+      // cannot practise a lesson their host created.
+      const access = await resolvePracticeAccess(prompt.lessonId, session.userId);
+      if (!access) {
+        return NextResponse.json(
+          { error: "Bạn không có quyền luyện tập bài học này." },
+          { status: 403 }
+        );
+      }
+
       referenceAnswer = prompt.enAnswer;
       viMeaning = prompt.viMeaning;
-      targetLanguage = prompt.lesson.targetLanguage;
+      targetLanguage = access.targetLanguage;
+      promptContext = {
+        promptId: prompt.id,
+        promptIndex: prompt.orderIndex,
+        lessonId: prompt.lessonId,
+        classroomId: access.classroomId,
+        classroomCode: access.classroomCode,
+        displayName: access.displayName,
+      };
     }
 
     if (!referenceAnswer || !viMeaning) {
@@ -75,7 +113,8 @@ export async function POST(req: NextRequest) {
             suggestion: { type: "string" },
           },
           required: ["isCorrect", "score", "feedback"],
-        } as any,
+          // Structurally identical to Gemini's Schema, but nominally distinct.
+        } as unknown as Schema,
       },
     });
 
@@ -84,15 +123,40 @@ export async function POST(req: NextRequest) {
     }
 
     const result = CheckResultSchema.parse(JSON.parse(response.text));
+
+    // Persist so the learner resumes where they left off, and let the rest of
+    // the class see the answer land in real time.
+    if (promptContext) {
+      const attempt = await savePracticeAttempt({
+        lessonId: promptContext.lessonId,
+        promptId: promptContext.promptId,
+        promptIndex: promptContext.promptIndex,
+        userId: session.userId,
+        classroomId: promptContext.classroomId,
+        displayName: promptContext.displayName,
+        answer: parsed.data.userAnswer,
+        isCorrect: result.isCorrect,
+        score: result.score,
+        feedback: result.feedback,
+        suggestion: result.suggestion ?? null,
+      });
+
+      if (promptContext.classroomCode) {
+        emitToRoom(promptContext.classroomCode, "practice-attempt", {
+          lessonId: promptContext.lessonId,
+          attempt,
+        });
+      }
+    }
+
     return NextResponse.json(result);
-  } catch (error: any) {
-    if (error?.message === "Unauthorized") {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal server error";
+    if (message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    return NextResponse.json(
-      { error: error?.message || "Internal server error" },
-      { status: 500 }
-    );
+    console.error("Error in POST /api/check-writing:", error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
