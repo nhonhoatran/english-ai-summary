@@ -5,10 +5,13 @@
 
 ---
 
-## [Chưa phát hành] Thêm bài học giữa buổi & branding — 2026-08-02
+## [Chưa phát hành] Thêm bài học giữa buổi, rò danh tính lớp & branding — 2026-08-02
 
 ### Sửa lỗi
 
+- **Đổi số điện thoại trong cùng browser vẫn hiện tên người trước** *(bảo mật — rò danh tính)* — hai tài khoản khác nhau cùng hiển thị một tên host. Chuỗi nguyên nhân: (1) backfill `ClassMember.userId` ở migration V4 match theo `phone` (`migration.sql:31-41`) nên các dòng có `phone = null` bị bỏ lại `userId = null`; (2) `getClassroomContext` tra thành viên theo `(classroomId, userId)` nên không bao giờ khớp mấy dòng đó; (3) rơi xuống nhánh cookie cũ, vốn resolve membership **chỉ bằng giá trị cookie**, không đối chiếu `userId`; (4) `/api/logout` chỉ xóa `auth_session`, để lại cookie `classroom_member_id_*` sống 30 ngày trên path `/`. Kết quả: đăng nhập bằng số khác trên cùng browser là thừa kế nguyên membership của người trước, và socket phát lại tên sai đó vào presence.
+  - Cookie cũ giờ **chỉ nhận được membership chưa có chủ** (`userId: null`) và nhận xong thì **chốt quyền sở hữu** cho user hiện tại, nên không thể chuyền sang tài khoản thứ hai.
+  - `/api/logout` quét sạch mọi cookie `classroom_member_id_*`.
 - **Host không thêm được bài học khi lớp đang chạy** *(chặn cứng tính năng V4)* — form dán link YouTube (`ClassroomAddLesson`) chỉ render khi lớp chưa có bài nào (`src/app/classroom/[code]/page.tsx:113`), còn nút "Thêm bài" trong `classroom-lesson-list.tsx` bị gate sau prop `onAddLesson` mà **không nơi nào truyền vào**. Hệ quả: backend hỗ trợ nhiều bài/lớp từ V4 nhưng UI chỉ cho thêm đúng bài đầu tiên. Thay prop chết bằng `ClassroomAddLessonDialog` tự chứa, host thêm bài ngay từ panel bài học; bài mới xuống cuối danh sách và **không kéo cả lớp ra khỏi bài đang học**.
 
 ### Thay đổi
@@ -18,6 +21,9 @@
 ### Thêm mới
 
 - `src/components/classroom/classroom-add-lesson-dialog.tsx` — nút "Thêm bài" + dialog bọc `AddLessonForm` sẵn có, tạo xong tự đóng và refresh.
+- `tests/integration/classroom-context.test.ts` — 3 test cho việc nhận membership cũ, trong đó có test chặn tài khoản thứ hai thừa kế danh tính. Bỏ bản vá ra là test rớt, nên nó bắt đúng bug.
+- `isMemberCookieName()` + `CLASSROOM_MEMBER_COOKIE_PREFIX` (`member-cookie.ts`) — để logout quét cookie lớp học một lượt.
+- Alias `server-only` → `tests/helpers/server-only-stub.ts` trong `vitest.config.ts`; gói thật ném lỗi khi chạy ngoài build React Server Component, chặn test import module phía server.
 
 ---
 
