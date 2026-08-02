@@ -5,6 +5,22 @@
 
 ---
 
+## [Chưa phát hành] Thêm bài học giữa buổi & branding — 2026-08-02
+
+### Sửa lỗi
+
+- **Host không thêm được bài học khi lớp đang chạy** *(chặn cứng tính năng V4)* — form dán link YouTube (`ClassroomAddLesson`) chỉ render khi lớp chưa có bài nào (`src/app/classroom/[code]/page.tsx:113`), còn nút "Thêm bài" trong `classroom-lesson-list.tsx` bị gate sau prop `onAddLesson` mà **không nơi nào truyền vào**. Hệ quả: backend hỗ trợ nhiều bài/lớp từ V4 nhưng UI chỉ cho thêm đúng bài đầu tiên. Thay prop chết bằng `ClassroomAddLessonDialog` tự chứa, host thêm bài ngay từ panel bài học; bài mới xuống cuối danh sách và **không kéo cả lớp ra khỏi bài đang học**.
+
+### Thay đổi
+
+- **Metadata & favicon** — `layout.tsx` còn nguyên default của create-next-app (`title: "Create Next App"`, favicon Next từ commit scaffold `f827b2a`). Đặt title tiếng Việt kèm `template` cho từng trang, thêm description + Open Graph, `html lang` `en` → `vi`, thay `src/app/favicon.ico` bằng `src/app/icon.svg`.
+
+### Thêm mới
+
+- `src/components/classroom/classroom-add-lesson-dialog.tsx` — nút "Thêm bài" + dialog bọc `AddLessonForm` sẵn có, tạo xong tự đóng và refresh.
+
+---
+
 ## [Chưa phát hành] Chọn giọng đọc — 2026-08-02
 
 ### Thêm mới
