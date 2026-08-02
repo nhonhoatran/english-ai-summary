@@ -6,13 +6,12 @@ import {
   selectClassroomLessonAction,
   removeClassroomLessonAction,
 } from "@/app/actions/classroom-lesson-actions";
-import { Button } from "@/components/ui/button";
+import { ClassroomAddLessonDialog } from "@/components/classroom/classroom-add-lesson-dialog";
 import {
   BookOpen,
   Play,
   Trash2,
   Loader2,
-  Plus,
   CircleDot,
   AlertCircle,
 } from "lucide-react";
@@ -30,7 +29,6 @@ interface ClassroomLessonListProps {
   lessons: ClassroomLessonSummary[];
   currentLessonId: string | null;
   isHost: boolean;
-  onAddLesson?: () => void;
 }
 
 function formatDuration(seconds: number | null): string | null {
@@ -44,7 +42,6 @@ export function ClassroomLessonList({
   lessons,
   currentLessonId,
   isHost,
-  onAddLesson,
 }: ClassroomLessonListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -83,15 +80,8 @@ export function ClassroomLessonList({
           <BookOpen className="w-4 h-4 text-purple-400" />
           <span>Bài học trong lớp ({lessons.length})</span>
         </div>
-        {isHost && onAddLesson && (
-          <Button
-            onClick={onAddLesson}
-            variant="ghost"
-            className="h-7 px-2 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/40 gap-1"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Thêm bài</span>
-          </Button>
+        {isHost && (
+          <ClassroomAddLessonDialog code={code} lessonCount={lessons.length} />
         )}
       </div>
 
