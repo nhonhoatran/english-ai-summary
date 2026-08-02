@@ -4,6 +4,8 @@
 import { useState, useMemo } from "react";
 import { usePlayer } from "./lesson-player-provider";
 import { formatTimestamp } from "@/lib/format-timestamp";
+import { useEnglishVoices } from "@/lib/speech/use-english-voices";
+import { describeVoice } from "@/lib/speech/rank-english-voices";
 import { Play, Users, User, Eye, EyeOff, Volume2, VolumeX } from "lucide-react";
 
 interface Segment {
@@ -35,6 +37,7 @@ export function TabDialogue({ dialogueLines = [], segments = [] }: TabDialoguePr
   const [revealedIds, setRevealedIds] = useState<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const { voices, selectedVoice, selectVoice } = useEnglishVoices();
 
   // Use dialogueLines if available, otherwise fall back to video transcript segments
   const displayItems = useMemo(() => {
@@ -92,7 +95,14 @@ export function TabDialogue({ dialogueLines = [], segments = [] }: TabDialoguePr
     }
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
+    // Without an explicit voice the browser falls back to its robotic default
+    // (Microsoft David/Zira on Windows, a "compact" voice on iOS).
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedVoice.lang;
+    } else {
+      utterance.lang = "en-US";
+    }
     utterance.rate = 0.95;
 
     utterance.onend = () => setSpeakingId(null);
@@ -129,30 +139,51 @@ export function TabDialogue({ dialogueLines = [], segments = [] }: TabDialoguePr
             <span>Bài đối thoại ELLLO do AI biên soạn (Dialogue Simulator)</span>
           </div>
 
-          {/* Mask toggle for Roleplay mode */}
-          {roleMode !== "all" && (
-            <button
-              type="button"
-              onClick={() => setMaskTargetLines((prev) => !prev)}
-              className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border transition-all cursor-pointer font-medium ${
-                maskTargetLines
-                  ? "bg-amber-950/50 text-amber-300 border-amber-800/60 hover:bg-amber-900/50"
-                  : "bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700"
-              }`}
-            >
-              {maskTargetLines ? (
-                <>
-                  <EyeOff className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Che lời vai của bạn (Đang bật)</span>
-                </>
-              ) : (
-                <>
-                  <Eye className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>Che lời vai của bạn (Tắt)</span>
-                </>
-              )}
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Voice picker — hidden until the browser reports its voices */}
+            {voices.length > 0 && (
+              <label className="inline-flex items-center gap-2 text-xs text-zinc-400">
+                <Volume2 className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                <span className="sr-only sm:not-sr-only">Giọng đọc</span>
+                <select
+                  value={selectedVoice?.name ?? ""}
+                  onChange={(e) => selectVoice(e.target.value)}
+                  className="max-w-[200px] truncate bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs cursor-pointer hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+                >
+                  {voices.map((voice) => (
+                    <option key={voice.name} value={voice.name}>
+                      {describeVoice(voice)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {/* Mask toggle for Roleplay mode */}
+            {roleMode !== "all" && (
+              <button
+                type="button"
+                onClick={() => setMaskTargetLines((prev) => !prev)}
+                className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border transition-all cursor-pointer font-medium ${
+                  maskTargetLines
+                    ? "bg-amber-950/50 text-amber-300 border-amber-800/60 hover:bg-amber-900/50"
+                    : "bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700"
+                }`}
+              >
+                {maskTargetLines ? (
+                  <>
+                    <EyeOff className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Che lời vai của bạn (Đang bật)</span>
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>Che lời vai của bạn (Tắt)</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Role Selector Tabs */}

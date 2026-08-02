@@ -5,6 +5,20 @@
 
 ---
 
+## [Chưa phát hành] Chọn giọng đọc — 2026-08-02
+
+### Thêm mới
+
+- **Chọn giọng đọc trong tab Dialogue** — dropdown liệt kê các giọng tiếng Anh mà trình duyệt cung cấp, lựa chọn được nhớ trong `localStorage`.
+- `rankEnglishVoices()` (`src/lib/speech/rank-english-voices.ts`) — xếp hạng giọng theo chất lượng: ưu tiên giọng Edge *Natural* và *Google*, đẩy giọng SAPI cũ (David/Zira Desktop) và giọng *compact* của iOS xuống cuối.
+- `useEnglishVoices()` (`src/lib/speech/use-english-voices.ts`) — hook nạp danh sách giọng qua `useSyncExternalStore`, có poll dự phòng vì Chrome nạp giọng bất đồng bộ và đôi khi không bắn `voiceschanged`.
+
+### Sửa lỗi
+
+- **Giọng đọc câu thoại nghe như máy** — `tab-dialogue.tsx` tạo `SpeechSynthesisUtterance` mà không set `voice`, nên trình duyệt rơi về giọng mặc định (Microsoft David/Zira trên Windows). Giờ luôn set giọng tốt nhất tìm được, hoặc giọng người dùng đã chọn.
+
+---
+
 ## [V4] Refactor lớp học — 2026-08-02
 
 Đợt refactor xử lý 4 vấn đề người dùng báo, cộng vài lỗi chặn cứng phát hiện trong lúc làm.
